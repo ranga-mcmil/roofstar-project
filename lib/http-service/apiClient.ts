@@ -67,6 +67,15 @@ export class APIClient {
     });
   }
 
+  async put<T>(url: string, data: unknown, options: RequestInit = {}): Promise<APIResponse<T>> {
+    return this.request<T>(url, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      ...options,
+    });
+  }
+
   async delete<T>(url: string, options: RequestInit = {}): Promise<APIResponse<T>> {
     return this.request<T>(url, { method: 'DELETE', ...options });
   }
