@@ -1,13 +1,12 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, Download } from "lucide-react"
+import { Plus, Download, Component } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Calendar } from "lucide-react"
-import { users } from "@/lib/dummy-data"
 import { WarehousesTable } from "./components/warehouses-table"
 import { WarehousesFilters } from "./components/warehouses-filters"
 import { getBranchesAction } from "@/actions/branches"
-import { BranchDTO, BranchResponse, GetBranchesResponse } from "@/lib/http-service/branches/types"
+import { BranchDTO } from "@/lib/http-service/branches/types"
 
 interface WarehousesPageProps {
   search?: string
@@ -40,33 +39,11 @@ export default async function WarehousesPage(props: {
     warehouses = response.data?.content as BranchDTO[]
   }
 
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log(warehouses)
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-   console.log("##")
-
-
-
   // Calculate pagination
   const totalItems = warehouses.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   const startIndex = (page - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-
-
   
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -158,3 +135,6 @@ export default async function WarehousesPage(props: {
     </div>
   )
 }
+
+
+

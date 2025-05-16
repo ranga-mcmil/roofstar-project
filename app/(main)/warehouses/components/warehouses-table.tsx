@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Warehouse } from "@/lib/types"
 import { ServerPagination } from "@/components/server-pagination"
 import { GetBranchesResponse } from "@/lib/http-service/branches/types"
 

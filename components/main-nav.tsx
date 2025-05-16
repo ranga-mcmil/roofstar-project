@@ -66,6 +66,15 @@ export function MainNav() {
       >
         Warehouses
       </Link>
+
+      <Link
+        href="/branches"
+        className={`text-sm font-medium ${
+          pathname.startsWith("/branches") ? "text-primary" : "text-muted-foreground"
+        } transition-colors hover:text-primary`}
+      >
+        Branches
+      </Link>
       
       <Link
         href="/users"
