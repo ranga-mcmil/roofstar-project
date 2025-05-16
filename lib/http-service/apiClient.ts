@@ -27,6 +27,18 @@ export class APIClient {
   private async request<T>(url: string, options: RequestInit): Promise<APIResponse<T>> {
     const response = await fetch(`${this.baseUrl}${url}`, options);
 
+    console.log("")
+    console.log("")
+    console.log("")
+    console.log("   response   response  response  response")
+    console.log(response)
+    console.log("")
+    console.log("")
+    console.log("")
+    console.log("")
+    console.log("")
+
+
     if (!response.ok) {
       const contentType = response.headers.get('content-type');
       const jsonContentType = 'application/json; charset=utf-8';

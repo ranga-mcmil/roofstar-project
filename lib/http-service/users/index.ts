@@ -1,29 +1,54 @@
-import { apiClient, APIResponse } from "@/lib/http-service//apiClient";
+/**
+ * users/index.ts
+ * 
+ * This file contains the UserService class that implements API requests
+ * to the user-controller endpoints.
+ */
+
+import { apiClient, APIResponse } from "@/lib/http-service/apiClient";
 import { apiHeaderService } from "@/lib/http-service/apiHeaders";
 import { BaseAPIRequests } from "@/lib/http-service/baseAPIRequests";
-import { ChangePasswordPayload, CreateUserPayload, CreateUserResponse, GetUserResponse, GetUsersResponse, UpdateUserPayload, UpdateUserResponse } from "./types";
+import { 
+  CreateUserPayload, 
+  CreateUserResponse, 
+  GetUsersResponse, 
+  GetUserResponse, 
+  UpdateUserPayload, 
+  UpdateUserResponse,
+  ChangePasswordPayload,
+  ForgotPasswordPayload,
+  UserPaginationParams
+} from "./types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/next-auth-options";
 
-export class UsersService extends BaseAPIRequests {
+export class UserService extends BaseAPIRequests {
 
-  async get_users(branchId?: string, pageNo?: number, pageSize?: number, sortBy?: string, sortDir?: string): Promise<APIResponse<GetUsersResponse>> {
-    const params = new URLSearchParams();
+  /**
+   * Get all users with pagination and optional branch filtering
+   * 
+   * GET /api/users
+   */
+  async get_users(params?: UserPaginationParams): Promise<APIResponse<GetUsersResponse>> {
+    const defaultParams: UserPaginationParams = {
+      pageNo: 0,
+      pageSize: 10,
+      sortBy: 'id',
+      sortDir: 'asc'
+    };
 
-    if (branchId) params.append('branchId', branchId);
-    if (pageNo !== undefined) params.append('pageNo', String(pageNo));
-    if (pageSize !== undefined) params.append('pageSize', String(pageSize));
-    if (sortBy) params.append('sortBy', sortBy);
-    if (sortDir) params.append('sortDir', sortDir);
+    const queryParams = { ...defaultParams, ...params };
+    const queryString = new URLSearchParams(
+      Object.entries(queryParams).reduce((acc, [key, value]) => {
+        if (value !== undefined) acc[key] = String(value);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
     
-    const queryString = params.toString();
-    const url = `/api/users${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/users?${queryString}`;
 
     try {
-      // const session = await sessionPromise;
-      const session = await getServerSession(authOptions)
-      
-
+      const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.get(url, { headers });
       return this.handleResponse<GetUsersResponse>(response);
@@ -36,15 +61,16 @@ export class UsersService extends BaseAPIRequests {
     }
   }
 
-
-  async get_user(userId: string): Promise<APIResponse<GetUserResponse>> {
-    const url = `/api/users/${userId}`
+  /**
+   * Get the current user
+   * 
+   * GET /api/users/me
+   */
+  async getCurrentUser(): Promise<APIResponse<GetUserResponse>> {
+    const url = `/api/users/me`;
 
     try {
-      // const session = await sessionPromise;
-      const session = await getServerSession(authOptions)
-
-
+      const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.get(url, { headers });
       return this.handleResponse<GetUserResponse>(response);
@@ -57,15 +83,38 @@ export class UsersService extends BaseAPIRequests {
     }
   }
 
+  /**
+   * Get a specific user by ID
+   * 
+   * GET /api/users/{userId}
+   */
+  async get_user(userId: string): Promise<APIResponse<GetUserResponse>> {
+    const url = `/api/users/${userId}`;
 
+    try {
+      const session = await getServerSession(authOptions);
+      const headers = await this.apiHeaders.getHeaders(session);
+      const response = await this.client.get(url, { headers });
+      return this.handleResponse<GetUserResponse>(response);
+    } catch (error) {
+      console.error('User Service request failed:', error);
+      return {
+        success: false,
+        error: (error as Error).message || 'An unknown error occurred',
+      };
+    }
+  }
+
+  /**
+   * Create a new user
+   * 
+   * POST /api/users
+   */
   async createUser(payload: CreateUserPayload): Promise<APIResponse<CreateUserResponse>> {
     const url = '/api/users';
 
-    // const session = await sessionPromise;
-    const session = await getServerSession(authOptions)
-    
-
     try {
+      const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.post(url, payload, { headers });
       return this.handleResponse<CreateUserResponse>(response);
@@ -78,16 +127,18 @@ export class UsersService extends BaseAPIRequests {
     }
   }
 
+  /**
+   * Update an existing user
+   * 
+   * PUT /api/users/{userId}
+   */
   async updateUser(payload: UpdateUserPayload, userId: string): Promise<APIResponse<UpdateUserResponse>> {
     const url = `/api/users/${userId}`;
     
-    // const session = await sessionPromise;
-    const session = await getServerSession(authOptions)
-
-
     try {
+      const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
-      const response = await this.client.post(url, payload, { headers });
+      const response = await this.client.put(url, payload, { headers });
       return this.handleResponse<UpdateUserResponse>(response);
     } catch (error) {
       console.error('User Service request failed:', error);
@@ -98,17 +149,19 @@ export class UsersService extends BaseAPIRequests {
     }
   }
 
-  async changePassword(payload: ChangePasswordPayload, userId: string) {
-    const url = `/api/users/${userId}/change-password`;
-    
-    // const session = await sessionPromise;
-    const session = await getServerSession(authOptions)
-
+  /**
+   * Toggle user status (active/inactive)
+   * 
+   * PATCH /api/users/{userId}/toggle-status
+   */
+  async toggleUserStatus(userId: string): Promise<APIResponse<Record<string, boolean>>> {
+    const url = `/api/users/${userId}/toggle-status`;
 
     try {
+      const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
-      const response = await this.client.post(url, payload, { headers });
-      return this.handleResponse(response);
+      const response = await this.client.patch(url, {}, { headers });
+      return this.handleResponse<Record<string, boolean>>(response);
     } catch (error) {
       console.error('User Service request failed:', error);
       return {
@@ -118,9 +171,49 @@ export class UsersService extends BaseAPIRequests {
     }
   }
 
-  
+  /**
+   * Change password for a specific user
+   * 
+   * POST /api/users/{userId}/change-password
+   */
+  async changePassword(userId: string, payload: ChangePasswordPayload): Promise<APIResponse<Record<string, string>>> {
+    const url = `/api/users/${userId}/change-password`;
 
-  
+    try {
+      const session = await getServerSession(authOptions);
+      const headers = await this.apiHeaders.getHeaders(session);
+      const response = await this.client.post(url, payload, { headers });
+      return this.handleResponse<Record<string, string>>(response);
+    } catch (error) {
+      console.error('User Service request failed:', error);
+      return {
+        success: false,
+        error: (error as Error).message || 'An unknown error occurred',
+      };
+    }
+  }
+
+  /**
+   * Reset password for a user (forgot password)
+   * 
+   * POST /api/users/{userId}/forgot-password
+   */
+  async forgotPassword(userId: string, payload: ForgotPasswordPayload): Promise<APIResponse<Record<string, string>>> {
+    const url = `/api/users/${userId}/forgot-password`;
+
+    try {
+      const session = await getServerSession(authOptions);
+      const headers = await this.apiHeaders.getHeaders(session);
+      const response = await this.client.post(url, payload, { headers });
+      return this.handleResponse<Record<string, string>>(response);
+    } catch (error) {
+      console.error('User Service request failed:', error);
+      return {
+        success: false,
+        error: (error as Error).message || 'An unknown error occurred',
+      };
+    }
+  }
 }
 
-export const usersService = new UsersService(apiClient, apiHeaderService);
+export const userService = new UserService(apiClient, apiHeaderService);

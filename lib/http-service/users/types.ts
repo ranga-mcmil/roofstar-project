@@ -1,34 +1,47 @@
-import { z } from "zod";
-import { UpdateUserSchema, CreateUserSchema, ChangePasswordSchema } from "./schema";
 
-export type CreateUserPayload = z.infer<typeof CreateUserSchema>
-export type UpdateUserPayload = z.infer<typeof UpdateUserSchema>
-export type ChangePasswordPayload = z.infer<typeof ChangePasswordSchema>
+/**
+ * users/types.ts
+ * 
+ * This file contains the TypeScript type definitions for user-related data.
+ */
 
+import { z } from 'zod';
+import { CreateUserSchema, UpdateUserSchema, ChangePasswordSchema, ForgotPasswordSchema } from './schema';
 
+// Schema-derived types
+export type CreateUserPayload = z.infer<typeof CreateUserSchema>;
+export type UpdateUserPayload = z.infer<typeof UpdateUserSchema>;
+export type ChangePasswordPayload = z.infer<typeof ChangePasswordSchema>;
+export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordSchema>;
 
-
-export type UserObj = {
+// Response types
+export interface UserDTO {
   id: string;
   email: string;
   name: string;
   lastName: string;
-  status: 'inactive' | 'active' | string;
-  role: 'ROLE_ADMIN' | 'ROLE_USER' | string; // Extend with actual roles
-  branchId: string | null;
-};
+  role: string;
+  branchId: string;
+}
 
-export type GetUsersResponse = {
-  content: UserObj[];
+export interface UserPaginationParams {
+  pageNo?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDir?: string;
+  branchId?: string;
+}
+
+export interface PaginationResponse<T> {
+  content: T[];
   pageNo: number;
   pageSize: number;
   totalElements: number;
   totalPages: number;
   last: boolean;
-};
+}
 
-
-export type GetUserResponse = UserObj
-export type CreateUserResponse = UserObj
-export type UpdateUserResponse = UserObj
-
+export type CreateUserResponse = UserDTO;
+export type GetUserResponse = UserDTO;
+export type UpdateUserResponse = UserDTO;
+export type GetUsersResponse = PaginationResponse<UserDTO>;

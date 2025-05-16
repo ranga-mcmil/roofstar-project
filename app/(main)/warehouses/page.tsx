@@ -7,7 +7,7 @@ import { users } from "@/lib/dummy-data"
 import { WarehousesTable } from "./components/warehouses-table"
 import { WarehousesFilters } from "./components/warehouses-filters"
 import { getBranchesAction } from "@/actions/branches"
-import { BranchResponse, GetBranchesResponse } from "@/lib/http-service/branches/types"
+import { BranchDTO, BranchResponse, GetBranchesResponse } from "@/lib/http-service/branches/types"
 
 interface WarehousesPageProps {
   search?: string
@@ -34,11 +34,30 @@ export default async function WarehousesPage(props: {
   const itemsPerPage = 2
 
   const response = await getBranchesAction()
-  let warehouses: GetBranchesResponse = []
+  let warehouses: BranchDTO[] = []
 
   if (response.success) {
-    warehouses = response.data as GetBranchesResponse
+    warehouses = response.data?.content as BranchDTO[]
   }
+
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log(warehouses)
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+   console.log("##")
+
 
 
   // Calculate pagination
@@ -46,15 +65,9 @@ export default async function WarehousesPage(props: {
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   const startIndex = (page - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const paginatedWarehouses = warehouses.slice(startIndex, endIndex)
 
 
-  // Pre-compute user counts for each warehouse
-  const userCounts: Record<string, number> = {}
-  for (const warehouse of paginatedWarehouses) {
-    userCounts[warehouse.id] = users.filter((user) => user.warehouseId === warehouse.id).length
-  }
-
+  
   return (
     <div className="flex min-h-screen w-full flex-col">
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -127,7 +140,7 @@ export default async function WarehousesPage(props: {
 
           <WarehousesTable
             warehouses={warehouses}
-            userCounts={userCounts}
+            userCounts={{}}
             pagination={{
               totalItems,
               totalPages,

@@ -1,22 +1,34 @@
+
+/**
+ * users/schema.ts
+ * 
+ * This file contains the Zod validation schemas for user-related data.
+ */
+
 import { z } from 'zod';
 
 export const CreateUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string(),
-  lastName: z.string(),
-  password: z.string(),
-  role: z.enum(["ROLE_SALES_REP", "ROLE_MANAGER", "ROLE_ADMIN"]),
-  branchId: z.string(),
+  email: z.string().min(1).email(),
+  name: z.string().min(1),
+  lastName: z.string().min(1),
+  password: z.string().min(1),
+  role: z.string().min(1),
+  branchId: z.string().optional(),
 });
 
 export const UpdateUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string(),
-  lastName: z.string(),
-  role: z.enum(["ROLE_SALES_REP", "ROLE_MANAGER", "ROLE_ADMIN"]), // Update with allowed roles
+  email: z.string().min(1).email(),
+  name: z.string().min(1),
+  lastName: z.string().min(1),
+  role: z.string(),
 });
 
 export const ChangePasswordSchema = z.object({
-  currentPassword: z.string(),
-  newPassword: z.string(),
+  email: z.string().min(1).email(),
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(1),
+});
+
+export const ForgotPasswordSchema = z.object({
+  newPassword: z.string().min(1),
 });
