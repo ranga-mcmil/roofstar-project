@@ -1,8 +1,12 @@
-import Link from "next/link"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Eye, FileText, Printer, Trash2 } from "lucide-react"
+'use client';
+
+import { useTransition } from 'react';
+import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal, Edit, Eye, KeyRound, Power, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,75 +14,84 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ServerPagination } from "@/components/server-pagination"
-import { UserObj } from "@/lib/http-service/users/types"
+} from "@/components/ui/dropdown-menu";
+import { ServerPagination } from "@/components/server-pagination";
+import { UserDTO } from "@/lib/http-service/users/types";
+import { BranchDTO } from "@/lib/http-service/branches/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UsersTableProps {
-  users: UserObj[]
+  users: UserDTO[];
+  branches: BranchDTO[];
   pagination: {
-    totalItems: number
-    totalPages: number
-    currentPage: number
-    itemsPerPage: number
-    startIndex: number
-    endIndex: number
-  }
-  currentSortField: string
-  currentSortDirection: "asc" | "desc"
-  searchParams?: Record<string, string>
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+    itemsPerPage: number;
+    startIndex: number;
+    endIndex: number;
+  };
+  searchParams?: Record<string, string>;
+  isLoading?: boolean;
+  onRefresh?: () => void;
 }
 
 export function UsersTable({
   users,
+  branches,
   pagination,
-  currentSortField,
-  currentSortDirection,
-  searchParams
+  searchParams,
+  isLoading = false,
+  onRefresh
 }: UsersTableProps) {
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  
+  // Combined loading state
+  const loading = isLoading || isPending;
 
-  // Get role badge color
-  const getRoleBadge = (role: UserRole) => {
-    switch (role) {
-      case "admin":
-        return <Badge className="bg-red-500">Admin</Badge>
-      case "store_manager":
-        return <Badge className="bg-blue-500">Store Manager</Badge>
-      case "sales_rep":
-        return <Badge className="bg-green-500">Sales Rep</Badge>
-      default:
-        return <Badge variant="outline">{role}</Badge>
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    return status === "active" ? (
-      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-        Active
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-        Inactive
-      </Badge>
-    )
-  }
-
-  // Fixed function to not use window object
-  const createSortURL = (field: string) => {
-    // Create a new URLSearchParams object
-    const params = new URLSearchParams()
-
-    // Set the sort field and direction
-    if (currentSortField === field) {
-      params.set("sortField", field)
-      params.set("sortDirection", currentSortDirection === "asc" ? "desc" : "asc")
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
     } else {
-      params.set("sortField", field)
-      params.set("sortDirection", "asc")
+      router.refresh();
     }
+  };
 
-    return `/users?${params.toString()}`
-  }
+  // Get branch name by ID
+  const getBranchName = (branchId: string | undefined) => {
+    if (!branchId) return 'Not Assigned';
+    const branch = branches.find(b => b.id === branchId);
+    return branch ? branch.name : 'Unknown Branch';
+  };
+
+  // Get role badge
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'ADMIN':
+        return <Badge className="bg-purple-500">Admin</Badge>;
+      case 'MANAGER':
+        return <Badge className="bg-blue-500">Manager</Badge>;
+      case 'USER':
+      default:
+        return <Badge variant="outline">User</Badge>;
+    }
+  };
+
+  // Generate skeleton rows for loading state
+  const renderSkeletonRows = () => {
+    return Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
+      <TableRow key={`skeleton-${index}`}>
+        <TableCell><Skeleton className="h-5 w-36" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell className="text-right">
+          <Skeleton className="h-8 w-8 rounded-full ml-auto" />
+        </TableCell>
+      </TableRow>
+    ));
+  };
 
   return (
     <>
@@ -86,70 +99,30 @@ export function UsersTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[40px]">
-                <span className="sr-only">Select</span>
-              </TableHead>
-              <TableHead>
-                <Link href={createSortURL("name")} className="flex items-center hover:underline">
-                  Name
-                  {currentSortField === "name" && (
-                    <span className="ml-1">{currentSortDirection === "asc" ? "↑" : "↓"}</span>
-                  )}
-                </Link>
-              </TableHead>
-              <TableHead>
-                <Link href={createSortURL("email")} className="flex items-center hover:underline">
-                  Email
-                  {currentSortField === "email" && (
-                    <span className="ml-1">{currentSortDirection === "asc" ? "↑" : "↓"}</span>
-                  )}
-                </Link>
-              </TableHead>
-              <TableHead>
-                <Link href={createSortURL("role")} className="flex items-center hover:underline">
-                  Role
-                  {currentSortField === "role" && (
-                    <span className="ml-1">{currentSortDirection === "asc" ? "↑" : "↓"}</span>
-                  )}
-                </Link>
-              </TableHead>
-              <TableHead>
-                <Link href={createSortURL("status")} className="flex items-center hover:underline">
-                  Status
-                  {currentSortField === "status" && (
-                    <span className="ml-1">{currentSortDirection === "asc" ? "↑" : "↓"}</span>
-                  )}
-                </Link>
-              </TableHead>
-              <TableHead>Warehouse</TableHead>
-              
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Branch</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 ? (
+            {loading ? (
+              // Loading skeleton rows
+              renderSkeletonRows()
+            ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No users found. Try adjusting your filters.
                 </TableCell>
               </TableRow>
             ) : (
               users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      disabled
-                    />
-                  </TableCell>
                   <TableCell className="font-medium">{user.name} {user.lastName}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{getRoleBadge('admin')}</TableCell>
-
-                  <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell>{user.branchId}</TableCell>
-
+                  <TableCell>{getRoleBadge(user.role)}</TableCell>
+                  <TableCell>{getBranchName(user.branchId)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -166,23 +139,24 @@ export function UsersTable({
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/users/edit/${user.id}`}>
+                          <Link href={`/users/${user.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" /> Edit
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link
-                            href={`/users/status/${user.id}?action=${user.status === "active" ? "deactivate" : "activate"}`}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            {user.status === "active" ? "Deactivate" : "Activate"}
+                          <Link href={`/users/${user.id}/change-password`}>
+                            <KeyRound className="mr-2 h-4 w-4" /> Change Password
                           </Link>
                         </DropdownMenuItem>
-                        
+                        <DropdownMenuItem asChild>
+                          <Link href={`/users/${user.id}/toggle-status`}>
+                            <Power className="mr-2 h-4 w-4" /> Toggle Status
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link
-                            href={`/users/delete/${user.id}`}
+                            href={`/users/${user.id}/delete`}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -198,15 +172,26 @@ export function UsersTable({
         </Table>
       </div>
 
-      {users.length > 0 && (
+      {(users.length > 0 || loading) && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            Showing {pagination.startIndex + 1} to {pagination.endIndex} of {pagination.totalItems} users
-          </p>
-          <ServerPagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} pathName={'/users'} searchParams={searchParams as Record<string, string>}/>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">
+              <Skeleton className="h-5 w-48" />
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Showing {pagination.startIndex + 1} to {pagination.endIndex} of {pagination.totalItems} users
+            </div>
+          )}
+          <ServerPagination 
+            currentPage={pagination.currentPage} 
+            totalPages={pagination.totalPages} 
+            pathName='/users' 
+            searchParams={searchParams}
+            isLoading={loading}
+          />
         </div>
       )}
     </>
-  )
+  );
 }
-

@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Eye, FileText, Printer, Trash2, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal, Edit, Eye, FileText, Printer, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ServerPagination } from "@/components/server-pagination"
 import { BranchDTO } from "@/lib/http-service/branches/types"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface BranchesTableProps {
   branches: BranchDTO[]
@@ -28,21 +29,31 @@ interface BranchesTableProps {
     startIndex: number
     endIndex: number
   }
-  currentSortField: string
-  currentSortDirection: "asc" | "desc"
   searchParams?: any
+  isLoading?: boolean
+  onRefresh?: () => void // Added callback for refreshing data after edit
 }
 
 export function BranchesTable({
   branches,
   pagination,
-  currentSortField,
-  currentSortDirection,
-  searchParams
+  searchParams,
+  isLoading = false,
+  onRefresh
 }: BranchesTableProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  
+  // Combined loading state (either from parent or from local transitions)
+  const loading = isLoading || isPending;
+
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      router.refresh();
+    }
+  };
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
@@ -56,33 +67,22 @@ export function BranchesTable({
     );
   };
 
-  // Create sort URL and navigation handler
-  const handleSort = (field: string) => {
-    startTransition(() => {
-      // Create a new URLSearchParams object
-      const params = new URLSearchParams();
-      
-      // Add all current search params that are strings
-      if (searchParams) {
-        Object.entries(searchParams).forEach(([key, value]) => {
-          if (key !== 'sortField' && key !== 'sortDirection' && value !== undefined && value !== null) {
-            params.set(key, String(value));
-          }
-        });
-      }
-      
-      // Set the sort field and direction
-      if (currentSortField === field) {
-        params.set("sortField", field);
-        params.set("sortDirection", currentSortDirection === "asc" ? "desc" : "asc");
-      } else {
-        params.set("sortField", field);
-        params.set("sortDirection", "asc");
-      }
-      
-      // Navigate with the new params
-      router.push(`${pathname}?${params.toString()}`);
-    });
+  // Generate skeleton rows for loading state
+  const renderSkeletonRows = () => {
+    return Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
+      <TableRow key={`skeleton-${index}`}>
+        <TableCell>
+          <Skeleton className="h-4 w-4" />
+        </TableCell>
+        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+        <TableCell className="text-right">
+          <Skeleton className="h-8 w-8 rounded-full ml-auto" />
+        </TableCell>
+      </TableRow>
+    ));
   };
 
   return (
@@ -94,69 +94,17 @@ export function BranchesTable({
               <TableHead className="w-[40px]">
                 <span className="sr-only">Select</span>
               </TableHead>
-              <TableHead>
-                <button 
-                  className="flex items-center hover:underline disabled:cursor-wait"
-                  onClick={() => handleSort("name")}
-                  disabled={isPending}
-                >
-                  Name
-                  {currentSortField === "name" ? (
-                    <span className="ml-1">{currentSortDirection === "asc" ? "↑" : "↓"}</span>
-                  ) : (
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
-                  )}
-                </button>
-              </TableHead>
-              <TableHead>
-                <button 
-                  className="flex items-center hover:underline disabled:cursor-wait"
-                  onClick={() => handleSort("location")}
-                  disabled={isPending}
-                >
-                  Location
-                  {currentSortField === "location" ? (
-                    <span className="ml-1">{currentSortDirection === "asc" ? "↑" : "↓"}</span>
-                  ) : (
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
-                  )}
-                </button>
-              </TableHead>
-              <TableHead>
-                <button 
-                  className="flex items-center hover:underline disabled:cursor-wait"
-                  onClick={() => handleSort("isActive")}
-                  disabled={isPending}
-                >
-                  Status
-                  {currentSortField === "isActive" ? (
-                    <span className="ml-1">{currentSortDirection === "asc" ? "↑" : "↓"}</span>
-                  ) : (
-                    <ArrowUpDown className="ml-1 h-4 w-4" />
-                  )}
-                </button>
-              </TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Address</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isPending ? (
+            {loading ? (
               // Loading skeleton rows
-              Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
-                <TableRow key={`skeleton-${index}`} className="animate-pulse">
-                  <TableCell>
-                    <div className="h-4 w-4 rounded bg-gray-200"></div>
-                  </TableCell>
-                  <TableCell><div className="h-5 w-32 rounded bg-gray-200"></div></TableCell>
-                  <TableCell><div className="h-5 w-24 rounded bg-gray-200"></div></TableCell>
-                  <TableCell><div className="h-5 w-16 rounded bg-gray-200"></div></TableCell>
-                  <TableCell><div className="h-5 w-40 rounded bg-gray-200"></div></TableCell>
-                  <TableCell className="text-right">
-                    <div className="h-8 w-8 rounded-full bg-gray-200 ml-auto"></div>
-                  </TableCell>
-                </TableRow>
-              ))
+              renderSkeletonRows()
             ) : branches.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
@@ -192,6 +140,7 @@ export function BranchesTable({
                             <Eye className="mr-2 h-4 w-4" /> View Details
                           </Link>
                         </DropdownMenuItem>
+                        {/* Edit Branch - Navigation-based approach */}
                         <DropdownMenuItem asChild>
                           <Link href={`/branches/${branch.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" /> Edit
@@ -229,23 +178,25 @@ export function BranchesTable({
         </Table>
       </div>
 
-      {branches.length > 0 && (
+      {(branches.length > 0 || loading) && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-muted-foreground">
-            Showing {pagination.startIndex + 1} to {pagination.endIndex} of {pagination.totalItems} branches
-          </p>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">
+              <Skeleton className="h-5 w-48" />
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Showing {pagination.startIndex + 1} to {pagination.endIndex} of {pagination.totalItems} branches
+            </div>
+          )}
           <ServerPagination 
             currentPage={pagination.currentPage} 
             totalPages={pagination.totalPages} 
             pathName='/branches' 
             searchParams={searchParams}
+            isLoading={loading}
           />
         </div>
-      )}
-      
-      {/* Global loading indicator */}
-      {isPending && (
-        <div className="fixed top-0 left-0 w-full h-1 bg-primary z-50 animate-pulse"></div>
       )}
     </>
   )

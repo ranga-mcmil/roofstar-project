@@ -5,29 +5,37 @@ import { useTransition } from 'react';
 import { Input } from "@/components/ui/input"
 import { Search, Loader2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BranchesFiltersProps {
   currentSearch: string
   currentStatus: string
+  isLoading?: boolean // Added prop to detect loading state from parent
 }
 
-export function BranchesFilters({ currentSearch, currentStatus }: BranchesFiltersProps) {
+export function BranchesFilters({ 
+  currentSearch, 
+  currentStatus, 
+  isLoading = false 
+}: BranchesFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  
+  // Combined loading state
+  const loading = isLoading || isPending;
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const search = formData.get('search') as string || '';
-    const status = formData.get('status') as string || 'all';
     
     // Create new URL with the form values
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    if (status !== 'all') params.set('status', status);
-    // Reset to page 1 when filters change
+    if (currentStatus !== 'all') params.set('status', currentStatus);
+    // Reset to page 1 when search changes
     params.set('page', '1');
     
     // Use transition to show loading state
@@ -51,6 +59,21 @@ export function BranchesFilters({ currentSearch, currentStatus }: BranchesFilter
     });
   };
 
+  if (loading) {
+    // Loading skeleton for filters
+    return (
+      <div className="flex flex-col gap-4 md:flex-row md:items-center mb-4">
+        <div className="relative flex-1">
+          <Skeleton className="absolute left-2.5 top-2.5 h-4 w-4" />
+          <Skeleton className="h-10 w-full sm:w-[300px]" />
+        </div>
+        <div className="flex flex-col gap-2 md:flex-row">
+          <Skeleton className="h-10 w-[180px]" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form className="flex flex-col gap-4 md:flex-row md:items-center mb-4" onSubmit={handleSubmit}>
       <div className="relative flex-1">
@@ -63,7 +86,7 @@ export function BranchesFilters({ currentSearch, currentStatus }: BranchesFilter
           type="search"
           name="search"
           placeholder="Search branches..."
-          className="pl-8 w-full"
+          className="pl-8 w-full sm:w-[300px]"
           defaultValue={currentSearch}
           disabled={isPending}
         />
@@ -88,11 +111,6 @@ export function BranchesFilters({ currentSearch, currentStatus }: BranchesFilter
           Apply Filters
         </button>
       </div>
-      
-      {/* Global loading indicator */}
-      {isPending && (
-        <div className="fixed top-0 left-0 w-full h-1 bg-primary z-50 animate-pulse"></div>
-      )}
     </form>
   )
 }

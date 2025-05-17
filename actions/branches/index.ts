@@ -45,6 +45,8 @@ export async function createBranchAction(formData: FormData): Promise<APIRespons
 
   if (res.success) {
     revalidatePath('/branches');
+
+    
     return {
       success: true,
       data: res.data,
@@ -105,6 +107,7 @@ export async function updateBranchAction(formData: FormData, branchId: string): 
 export async function deleteBranchAction(branchId: string): Promise<APIResponse<void>> {
   const res = await branchesService.deleteBranch(branchId);
   
+
   if (res.success) {
     revalidatePath('/branches');
   }

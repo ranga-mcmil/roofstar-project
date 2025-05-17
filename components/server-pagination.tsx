@@ -3,17 +3,20 @@
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ServerPagination({ 
   currentPage, 
   totalPages, 
   pathName, 
-  searchParams = {}
+  searchParams = {},
+  isLoading = false
 }: { 
   currentPage: number; 
   totalPages: number;  
   pathName: string; 
   searchParams?: Record<string, string> | any;
+  isLoading?: boolean;
 }) {
   const router = useRouter();
   const currentSearchParams = useSearchParams();
@@ -21,6 +24,9 @@ export function ServerPagination({
   const [isPending, startTransition] = useTransition();
   // Track which button is loading
   const [loadingButton, setLoadingButton] = useState<'prev' | 'next' | number | null>(null);
+  
+  // Combined loading state
+  const loading = isLoading || isPending;
 
   const createPageURL = (pageNumber: number | string) => {
     // Start with a fresh URLSearchParams instance
@@ -107,14 +113,29 @@ export function ServerPagination({
 
   const pageNumbers = getPageNumbers();
 
+  // If we're in the initial loading state, show skeleton pagination
+  if (isLoading) {
+    return (
+      <div className="flex items-center space-x-2">
+        <Skeleton className="h-9 w-20 rounded-md" />
+        <div className="flex items-center space-x-1">
+          {[1, 2, 3].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-9 rounded-md" />
+          ))}
+        </div>
+        <Skeleton className="h-9 w-20 rounded-md" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center space-x-2">
       <button
         onClick={() => currentPage > 1 && navigateWithLoading(currentPage - 1, 'prev')}
         className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium ${
-          currentPage === 1 || isPending ? "cursor-not-allowed text-gray-400" : "text-gray-700 hover:bg-gray-50"
+          currentPage === 1 || loading ? "cursor-not-allowed text-gray-400" : "text-gray-700 hover:bg-gray-50"
         }`}
-        disabled={currentPage === 1 || isPending}
+        disabled={currentPage === 1 || loading}
       >
         {loadingButton === 'prev' && isPending ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -128,7 +149,7 @@ export function ServerPagination({
             <button
               key={index}
               onClick={() => navigateWithLoading(page, page)}
-              disabled={isPending || currentPage === page}
+              disabled={loading || currentPage === page}
               className={`relative inline-flex items-center px-3 py-2 text-sm font-medium ${
                 currentPage === page
                   ? "z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -152,9 +173,9 @@ export function ServerPagination({
       <button
         onClick={() => currentPage < totalPages && navigateWithLoading(currentPage + 1, 'next')}
         className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium ${
-          currentPage === totalPages || isPending ? "cursor-not-allowed text-gray-400" : "text-gray-700 hover:bg-gray-50"
+          currentPage === totalPages || loading ? "cursor-not-allowed text-gray-400" : "text-gray-700 hover:bg-gray-50"
         }`}
-        disabled={currentPage === totalPages || isPending}
+        disabled={currentPage === totalPages || loading}
       >
         {loadingButton === 'next' && isPending ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

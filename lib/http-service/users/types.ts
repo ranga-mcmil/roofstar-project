@@ -22,6 +22,7 @@ export interface UserDTO {
   lastName: string;
   role: string;
   branchId: string;
+  active: string
 }
 
 export interface UserPaginationParams {

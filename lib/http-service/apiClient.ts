@@ -27,16 +27,13 @@ export class APIClient {
   private async request<T>(url: string, options: RequestInit): Promise<APIResponse<T>> {
     const response = await fetch(`${this.baseUrl}${url}`, options);
 
-    console.log("")
-    console.log("")
-    console.log("")
-    console.log("   response   response  response  response")
+
+    console.log("**")
+    console.log(options)
+    console.log(`Request to: ${this.baseUrl}${url}`)
     console.log(response)
-    console.log("")
-    console.log("")
-    console.log("")
-    console.log("")
-    console.log("")
+    console.log("**")
+   
 
 
     if (!response.ok) {
@@ -51,6 +48,11 @@ export class APIClient {
           return { success: false, error: `${response.statusText}`, data: undefined };
       }
     } 
+
+
+    if (options.method === 'DELETE') {
+      return { success: true };
+    }
     
     const data = await response.json();
     return { success: true, data };
