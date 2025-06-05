@@ -41,7 +41,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Edit User: {user.name} {user.lastName}</h1>
+            <h1 className="text-2xl font-bold">Edit User: {user.firstName} {user.lastName}</h1>
             <p className="text-muted-foreground">Update user information</p>
           </div>
         </div>

@@ -119,7 +119,7 @@ export function UsersTable({
             ) : (
               users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name} {user.lastName}</TableCell>
+                  <TableCell className="font-medium">{user.firstName} {user.lastName}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
                   <TableCell>{getBranchName(user.branchId)}</TableCell>

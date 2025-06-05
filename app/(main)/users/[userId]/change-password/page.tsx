@@ -43,7 +43,7 @@ export default async function ChangePasswordPage({ params }: ChangePasswordPageP
           <div>
             <h1 className="text-2xl font-bold">
               <KeyRound className="inline-block mr-2 h-6 w-6" />
-              Change Password: {user.name} {user.lastName}
+              Change Password: {user.firstName} {user.lastName}
             </h1>
             <p className="text-muted-foreground">Update user password</p>
           </div>

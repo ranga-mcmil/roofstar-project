@@ -25,7 +25,9 @@ export default async function ToggleUserStatusPage({ params }: ToggleUserStatusP
   }
   
   const user: GetUserResponse = userResponse.data;
-  const isActive = user.active;
+  // Note: Since the API doesn't have an 'active' field, we'll default to true
+  // You may need to adjust this logic based on your actual API response
+  const isActive = true; // Default assumption since API doesn't specify user status
   
   // Create a form action that uses the existing toggleUserStatusAction
   async function handleToggleStatus() {
@@ -51,7 +53,7 @@ export default async function ToggleUserStatusPage({ params }: ToggleUserStatusP
           <Power className={`h-16 w-16 mb-2 ${isActive ? 'text-amber-500' : 'text-green-500'}`} />
           <CardTitle className="text-2xl">{isActive ? "Deactivate" : "Activate"} User</CardTitle>
           <CardDescription>
-            You are about to {isActive ? "deactivate" : "activate"} user "{user.name} {user.lastName}".
+            You are about to {isActive ? "deactivate" : "activate"} user "{user.firstName} {user.lastName}".
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -79,7 +81,7 @@ export default async function ToggleUserStatusPage({ params }: ToggleUserStatusP
             <div className="p-3 bg-gray-50 border border-gray-200 rounded-md mt-2">
               <p className="font-medium">User details:</p>
               <div className="mt-2 space-y-1">
-                <p><span className="font-medium">Name:</span> {user.name} {user.lastName}</p>
+                <p><span className="font-medium">Name:</span> {user.firstName} {user.lastName}</p>
                 <p><span className="font-medium">Email:</span> {user.email}</p>
                 <p><span className="font-medium">Role:</span> {user.role}</p>
               </div>

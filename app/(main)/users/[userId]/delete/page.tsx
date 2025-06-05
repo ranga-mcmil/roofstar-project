@@ -56,7 +56,7 @@ export default async function DeleteUserPage({ params }: DeleteUserPageProps) {
           <Trash2 className="h-16 w-16 text-red-500 mb-2" />
           <CardTitle className="text-2xl">Delete User</CardTitle>
           <CardDescription>
-            You are about to permanently delete user "{user.name} {user.lastName}".
+            You are about to permanently delete user "{user.firstName} {user.lastName}".
             This action cannot be undone.
           </CardDescription>
         </CardHeader>
@@ -71,19 +71,10 @@ export default async function DeleteUserPage({ params }: DeleteUserPageProps) {
               </ul>
             </div>
             
-            {user.active && (
-              <div className="p-3 bg-amber-50 text-amber-800 rounded-md mt-2">
-                <p className="font-medium">Active User</p>
-                <p className="text-sm mt-1">
-                  This user is currently active. Consider deactivating instead of deleting if you might need to restore access later.
-                </p>
-              </div>
-            )}
-            
             <div className="p-3 bg-gray-50 border border-gray-200 rounded-md mt-2">
               <p className="font-medium">User details:</p>
               <div className="mt-2 space-y-1">
-                <p><span className="font-medium">Name:</span> {user.name} {user.lastName}</p>
+                <p><span className="font-medium">Name:</span> {user.firstName} {user.lastName}</p>
                 <p><span className="font-medium">Email:</span> {user.email}</p>
                 <p><span className="font-medium">Role:</span> {user.role}</p>
               </div>

@@ -80,7 +80,7 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">{user.name} {user.lastName}</h1>
+              <h1 className="text-2xl font-bold">{user.firstName} {user.lastName}</h1>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <span>{user.email}</span>
                 <span>•</span>
@@ -99,9 +99,9 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </Link>
             </Button>
-            <Button variant={user.active ? "default" : "secondary"} asChild>
+            <Button variant="default" asChild>
               <Link href={`/users/${userId}/toggle-status`}>
-                <Power className="mr-2 h-4 w-4" /> {user.active ? "Deactivate" : "Activate"}
+                <Power className="mr-2 h-4 w-4" /> Toggle Status
               </Link>
             </Button>
           </div>
@@ -116,7 +116,7 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
               <div className="space-y-3">
                 <div className="space-y-1">
                   <div className="text-sm font-medium">Full Name</div>
-                  <div>{user.name} {user.lastName}</div>
+                  <div>{user.firstName} {user.lastName}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm font-medium">Email</div>
@@ -125,16 +125,6 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
                 <div className="space-y-1">
                   <div className="text-sm font-medium">Role</div>
                   <div>{getRoleBadge(user.role)}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">Status</div>
-                  <div>
-                    {user.active ? (
-                      <Badge className="bg-green-500 text-white">Active</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-gray-100">Inactive</Badge>
-                    )}
-                  </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm font-medium">User ID</div>

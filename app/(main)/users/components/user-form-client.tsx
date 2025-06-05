@@ -93,13 +93,13 @@ export function UserFormClient({ user, returnUrl }: UserFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="name">
+          <Label htmlFor="firstName">
             First Name <span className="text-red-500">*</span>
           </Label>
           <Input
-            id="name"
-            name="name"
-            defaultValue={user?.name || ""}
+            id="firstName"
+            name="firstName"
+            defaultValue={user?.firstName || ""}
             placeholder="Enter first name"
             required
           />
@@ -144,6 +144,25 @@ export function UserFormClient({ user, returnUrl }: UserFormProps) {
             <SelectItem value="ADMIN">Admin</SelectItem>
             <SelectItem value="MANAGER">Manager</SelectItem>
             <SelectItem value="USER">User</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="branchId">
+          Branch
+        </Label>
+        <Select name="branchId" defaultValue={user?.branchId || "_none"}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select branch" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_none">None</SelectItem>
+            {branches.map((branch) => (
+              <SelectItem key={branch.id} value={branch.id}>
+                {branch.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

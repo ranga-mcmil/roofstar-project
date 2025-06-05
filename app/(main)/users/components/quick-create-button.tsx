@@ -30,7 +30,7 @@ export function QuickCreateButton() {
   // Initialize form state
   const [formData, setFormData] = useState({
     email: '',
-    name: '',
+    firstName: '',
     lastName: '',
     password: '',
     role: 'USER',
@@ -77,7 +77,7 @@ export function QuickCreateButton() {
       // Convert form data to FormData for the action
       const submitData = new FormData();
       submitData.append('email', formData.email);
-      submitData.append('name', formData.name);
+      submitData.append('firstName', formData.firstName);
       submitData.append('lastName', formData.lastName);
       submitData.append('password', formData.password);
       submitData.append('role', formData.role);
@@ -92,7 +92,7 @@ export function QuickCreateButton() {
         // Show success toast
         toast({
           title: "User Created",
-          description: `User "${formData.name} ${formData.lastName}" was created successfully.`,
+          description: `User "${formData.firstName} ${formData.lastName}" was created successfully.`,
           variant: "default",
         });
         
@@ -100,7 +100,7 @@ export function QuickCreateButton() {
         setIsOpen(false);
         setFormData({
           email: '',
-          name: '',
+          firstName: '',
           lastName: '',
           password: '',
           role: 'USER',
@@ -144,11 +144,11 @@ export function QuickCreateButton() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name" className="font-medium">First Name <span className="text-red-500">*</span></Label>
+                <Label htmlFor="firstName" className="font-medium">First Name <span className="text-red-500">*</span></Label>
                 <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
                   onChange={handleChange}
                   required
                   placeholder="Enter first name"
@@ -231,7 +231,7 @@ export function QuickCreateButton() {
                     <SelectValue placeholder="Select branch" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="_none">None</SelectItem>
                     {branches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
