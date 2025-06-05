@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { AlertCircle, CreditCard, FileText, Loader2, Package, Plus, Search, Trash2, Tag, Check, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -42,6 +43,7 @@ import { CustomerDTO } from "@/lib/http-service/customers/types"
 import { BranchDTO } from "@/lib/http-service/branches/types"
 import { ProductCategoryDTO } from "@/lib/http-service/categories/types"
 import { OrderType, PaymentMethod } from "@/lib/http-service/orders/types"
+import { USER_ROLES } from "@/lib/types"
 
 // Enhanced cart item type
 interface CartItem {
@@ -180,13 +182,19 @@ interface ProductGridProps {
   searchQuery: string
   onAddToCart: (product: ProductDTO) => void
   isLoading: boolean
+  currentUserBranch?: string
 }
 
-function ProductGrid({ products, category, searchQuery, onAddToCart, isLoading }: ProductGridProps) {
+function ProductGrid({ products, category, searchQuery, onAddToCart, isLoading, currentUserBranch }: ProductGridProps) {
   const [addedToCart, setAddedToCart] = useState<Record<number, boolean>>({})
 
-  // Filter products
+  // Filter products - only show products from user's branch for non-admin users
   const filteredProducts = products.filter((product) => {
+    // Filter by branch if user has a specific branch (Manager/Sales Rep)
+    if (currentUserBranch && product.branchId !== currentUserBranch) {
+      return false
+    }
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
@@ -236,7 +244,10 @@ function ProductGrid({ products, category, searchQuery, onAddToCart, isLoading }
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {filteredProducts.length === 0 ? (
         <div className="col-span-full text-center py-8 text-muted-foreground">
-          No products found. Try adjusting your search.
+          {currentUserBranch ? 
+            "No products available for your branch. Try adjusting your search." :
+            "No products found. Try adjusting your search."
+          }
         </div>
       ) : (
         filteredProducts.map((product) => (
@@ -262,7 +273,9 @@ function ProductGrid({ products, category, searchQuery, onAddToCart, isLoading }
                 disabled={addedToCart[product.id] || !product.isActive || (product.stockQuantity || 0) === 0}
               >
                 {addedToCart[product.id] ? (
-                  "Added"
+                  <>
+                    <Check className="mr-2 h-4 w-4" /> Added
+                  </>
                 ) : !product.isActive ? (
                   "Inactive"
                 ) : (product.stockQuantity || 0) === 0 ? (
@@ -282,6 +295,10 @@ function ProductGrid({ products, category, searchQuery, onAddToCart, isLoading }
 }
 
 export default function POSPage() {
+  // Session management
+  const { data: session, status } = useSession()
+  const sessionLoading = status === "loading"
+
   // Loading states
   const [isLoading, setIsLoading] = useState(false)
   const [productsLoading, setProductsLoading] = useState(true)
@@ -312,12 +329,27 @@ export default function POSPage() {
   const { toast } = useToast()
   const router = useRouter()
 
+  // Get user's role and branch
+  const userRole = session?.user?.role
+  const userBranch = session?.user?.branchId
+  const isAdmin = userRole === USER_ROLES.ADMIN
+
   // Load initial data
   useEffect(() => {
+    // Don't load data until session is ready
+    if (sessionLoading) return
+
     const loadData = async () => {
       try {
+        // Load products - filter by branch for non-admin users
+        const productParams = isAdmin ? 
+          { pageNo: 0, pageSize: 100 } : 
+          { pageNo: 0, pageSize: 100 }
+
         const [productsRes, customersRes, branchesRes, categoriesRes] = await Promise.all([
-          getProductsAction({ pageNo: 0, pageSize: 100 }),
+          userBranch ? 
+            getProductsAction(productParams) : // For branch-specific users, we'll filter on client side
+            getProductsAction(productParams),
           getCustomersAction({ pageNo: 0, pageSize: 100 }),
           getBranchesAction({ pageNo: 0, pageSize: 50 }),
           getCategoriesAction()
@@ -330,11 +362,24 @@ export default function POSPage() {
           setCustomers(customersRes.data.content)
         }
         if (branchesRes.success) {
-          setBranches(branchesRes.data.content.filter(b => b.isActive))
-          // Auto-select first active branch
-          const activeBranches = branchesRes.data?.content.filter(b => b.isActive)
-          if (activeBranches!.length > 0) {
-            setSelectedBranch(activeBranches![0].id)
+          const activeBranches = branchesRes.data.content.filter(b => b.isActive)
+          
+          // For admin, show all branches. For others, filter to their branch
+          if (isAdmin) {
+            setBranches(activeBranches)
+            // Auto-select first branch for admin
+            if (activeBranches.length > 0) {
+              setSelectedBranch(activeBranches[0].id)
+            }
+          } else if (userBranch) {
+            // For Manager/Sales Rep, only show their branch
+            const userBranchData = activeBranches.find(b => b.id === userBranch)
+            if (userBranchData) {
+              setBranches([userBranchData])
+              setSelectedBranch(userBranch)
+            }
+          } else {
+            setBranches(activeBranches)
           }
         }
         if (categoriesRes.success) {
@@ -356,7 +401,50 @@ export default function POSPage() {
     }
 
     loadData()
-  }, [toast])
+  }, [toast, sessionLoading, isAdmin, userBranch])
+
+  // Show loading if session is still loading
+  if (sessionLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading POS...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if no session
+  if (!session) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Alert className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Authentication Required</AlertTitle>
+          <AlertDescription>
+            Please log in to access the Point of Sale system.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  if (userRole !== USER_ROLES.SALES_REP) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Alert className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            The Point of Sale system is only available to Sales Representatives.
+            {userRole === USER_ROLES.ADMIN && " As an Admin, please use the main dashboard to manage the system."}
+            {userRole === USER_ROLES.MANAGER && " As a Manager, please use the reports and management sections."}
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   // Cart operations
   const addToCart = (product: ProductDTO) => {
@@ -403,6 +491,15 @@ export default function POSPage() {
     setCartItems(items => 
       items.map(item => 
         item.id === id ? { ...item, length, width } : item
+      )
+    )
+  }
+
+  const updateDiscount = (id: number, discount: number) => {
+    if (discount < 0 || discount > 100) return
+    setCartItems(items => 
+      items.map(item => 
+        item.id === id ? { ...item, discount } : item
       )
     )
   }
@@ -564,7 +661,14 @@ export default function POSPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-2xl font-bold">Point of Sale</h1>
-                <p className="text-muted-foreground">Create orders and process transactions</p>
+                <p className="text-muted-foreground">
+                  Create orders and process transactions
+                  {userBranch && !isAdmin && (
+                    <span className="ml-2">
+                      • Branch: {branches.find(b => b.id === userBranch)?.name}
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
 
@@ -599,6 +703,7 @@ export default function POSPage() {
                   searchQuery={searchQuery}
                   onAddToCart={addToCart}
                   isLoading={productsLoading}
+                  currentUserBranch={!isAdmin ? userBranch : undefined}
                 />
               </TabsContent>
 
@@ -609,6 +714,7 @@ export default function POSPage() {
                     searchQuery={searchQuery}
                     onAddToCart={addToCart}
                     isLoading={productsLoading}
+                    currentUserBranch={!isAdmin ? userBranch : undefined}
                   />
                 </TabsContent>
               ))}
@@ -717,13 +823,31 @@ export default function POSPage() {
                               />
                             </div>
                           </div>
+
+                          <div className="mt-2">
+                            <Label className="text-xs">Discount (%)</Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={item.discount}
+                              onChange={(e) => updateDiscount(item.id, parseFloat(e.target.value) || 0)}
+                              className="h-8 text-center"
+                              min="0"
+                              max="100"
+                            />
+                          </div>
                           
                           <div className="mt-2 text-right">
                             <div className="text-sm text-muted-foreground">
                               Area: {(item.length * item.width).toFixed(2)} m²
                             </div>
+                            {item.discount > 0 && (
+                              <div className="text-xs text-muted-foreground line-through">
+                                ${(item.price * item.quantity * item.length * item.width).toFixed(2)}
+                              </div>
+                            )}
                             <div className="font-medium">
-                              ${(item.price * item.quantity * item.length * item.width).toFixed(2)}
+                              ${((item.price * item.quantity * item.length * item.width) * (1 - item.discount / 100)).toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -763,36 +887,58 @@ export default function POSPage() {
                   </div>
                 </div>
 
-                {/* Branch Selection */}
-                <div>
-                  <Label>Branch *</Label>
-                  <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={branchesLoading}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={branchesLoading ? "Loading branches..." : "Select branch"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.map((branch) => (
-                        <SelectItem key={branch.id} value={branch.id}>
-                          {branch.name} - {branch.location}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Branch Selection - Show only if admin or multiple branches available */}
+                {(isAdmin || branches.length > 1) && (
+                  <div>
+                    <Label>Branch *</Label>
+                    <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={branchesLoading || (!isAdmin && branches.length === 1)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={branchesLoading ? "Loading branches..." : "Select branch"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {branches.map((branch) => (
+                          <SelectItem key={branch.id} value={branch.id}>
+                            {branch.name} - {branch.location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Payment Details (for non-quotation orders) */}
                 {orderType !== "QUOTATION" && (
                   <>
                     <div>
                       <Label>Payment Amount *</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={paymentAmount}
-                        onChange={(e) => setPaymentAmount(e.target.value)}
-                        placeholder="Enter payment amount"
-                        required
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={paymentAmount}
+                          onChange={(e) => setPaymentAmount(e.target.value)}
+                          placeholder="Enter payment amount"
+                          required
+                          className="flex-1"
+                        />
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPaymentAmount(total.toFixed(2))}
+                              >
+                                Full
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Set to full amount (${total.toFixed(2)})</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </div>
                     <div>
                       <Label>Payment Method *</Label>
@@ -850,6 +996,25 @@ export default function POSPage() {
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
+                  
+                  {/* Payment amount validation for immediate sales */}
+                  {orderType === "IMMEDIATE_SALE" && paymentAmount && (
+                    <div className="mt-2">
+                      {parseFloat(paymentAmount) < total ? (
+                        <div className="text-sm text-red-600">
+                          Insufficient payment amount. ${(total - parseFloat(paymentAmount)).toFixed(2)} remaining.
+                        </div>
+                      ) : parseFloat(paymentAmount) > total ? (
+                        <div className="text-sm text-green-600">
+                          Change: ${(parseFloat(paymentAmount) - total).toFixed(2)}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-green-600">
+                          Exact payment amount
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -866,7 +1031,8 @@ export default function POSPage() {
                   !selectedBranch ||
                   !dataLoaded ||
                   (orderType !== "QUOTATION" && (!paymentAmount || !paymentMethod)) ||
-                  (orderType === "FUTURE_COLLECTION" && !expectedCollectionDate)
+                  (orderType === "FUTURE_COLLECTION" && !expectedCollectionDate) ||
+                  (orderType === "IMMEDIATE_SALE" && parseFloat(paymentAmount || "0") < total)
                 }
               >
                 {isLoading ? (
@@ -878,6 +1044,18 @@ export default function POSPage() {
                   `Create ${orderType.replace('_', ' ')}`
                 )}
               </Button>
+              
+              {/* Show validation messages */}
+              {cartItems.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Add items to cart to create an order
+                </p>
+              )}
+              {orderType === "IMMEDIATE_SALE" && paymentAmount && parseFloat(paymentAmount) < total && (
+                <p className="text-xs text-red-600 mt-2 text-center">
+                  Payment amount must be at least ${total.toFixed(2)}
+                </p>
+              )}
             </div>
           </form>
         </div>
@@ -901,3 +1079,4 @@ export default function POSPage() {
     </div>
   )
 }
+                              
