@@ -1045,21 +1045,7 @@ export default function POSPage() {
               )}
 
               {/* Debug info in development */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                  <div>Debug Info:</div>
-                  <div>Data Loaded: {dataLoaded.toString()}</div>
-                  <div>User Branch: {userBranch || 'none'}</div>
-                  <div>Selected Customer: {selectedCustomer || 'none'}</div>
-                  <div>Cart Items: {cartItems.length}</div>
-                  <div>Payment Amount: {paymentAmount || 'none'}</div>
-                  <div>Order Type: {orderType}</div>
-                  <div>Total: ${total.toFixed(2)}</div>
-                  <div>Button Disabled: {buttonState.disabled.toString()}</div>
-                  <div>Disable Reason: {buttonState.reason || 'none'}</div>
-                  <div>Session User: {JSON.stringify(session?.user || {})}</div>
-                </div>
-              )}
+              
             </div>
           </form>
         </div>
