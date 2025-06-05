@@ -1,16 +1,19 @@
+// lib/auth/next-auth-options.ts - Updated with branchId support
 import { AuthOptions, Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { jwtDecode } from "jwt-decode";
 import { JWT } from "next-auth/jwt";
 import { refreshTokenAction, signInAction } from "@/actions/accounts";
+import { UserRole } from "@/lib/types";
 
 interface DecodedToken {
     sub: string;
-    role: string;
+    role: UserRole;
     userId: string;
     exp: number;
     iat: number;
-    iss: string
+    iss: string;
+    branchId?: string; // Optional - only present for Manager and Sales Rep
 }
 
 export const authOptions: AuthOptions = {
@@ -50,6 +53,7 @@ export const authOptions: AuthOptions = {
                         role: decodedToken.role,
                         email: decodedToken.sub,
                         id: decodedToken.userId,
+                        branchId: decodedToken.branchId, // Add branchId (optional)
                     };
                 } else {
                     throw new Error(response.error);
@@ -68,6 +72,7 @@ export const authOptions: AuthOptions = {
                     id: user.id,
                     role: user.role,
                     email: user.email,
+                    branchId: user.branchId, // Add branchId to token
                 };
             }
 
@@ -92,6 +97,14 @@ export const authOptions: AuthOptions = {
                         token.accessToken = data!.accessToken;
                         token.refreshToken = data!.refreshToken;
                         token.expiresAt = tokenExp; // Update expiry time
+                        
+                        // Update user info from refreshed token
+                        token.user = {
+                            id: decodedToken.userId,
+                            role: decodedToken.role,
+                            email: decodedToken.sub,
+                            branchId: decodedToken.branchId, // Update branchId from refreshed token
+                        };
                     } else {
                         token = {} as JWT; 
                     }

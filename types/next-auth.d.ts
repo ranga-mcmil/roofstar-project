@@ -1,5 +1,7 @@
+// types/next-auth.d.ts - Updated with branchId support
 import { DefaultSession } from "next-auth";
 import "next-auth/jwt";
+import { UserRole } from "@/lib/types";
 
 declare module "next-auth" {
     /**
@@ -9,8 +11,8 @@ declare module "next-auth" {
     interface User {
         id: string;
         email: string;
-        role: string;
-        
+        role: UserRole;
+        branchId?: string; // Optional - only present for Manager and Sales Rep
     }
 
     /**
@@ -30,6 +32,6 @@ declare module "next-auth/jwt" {
         accessToken?: string;
         refreshToken?: string;
         expiresAt?: string;
-        user?: User
+        user?: User;
     }
 }
