@@ -26,7 +26,7 @@ import { revalidatePath } from "next/cache";
 export async function createUserAction(formData: FormData): Promise<APIResponse<CreateUserResponse, CreateUserPayload>> {
   const rawData: CreateUserPayload = {
     email: formData.get('email') as string,
-    name: formData.get('name') as string,
+    firstName: formData.get('firstName') as string,
     lastName: formData.get('lastName') as string,
     password: formData.get('password') as string,
     role: formData.get('role') as string,
@@ -65,7 +65,7 @@ export async function createUserAction(formData: FormData): Promise<APIResponse<
 export async function updateUserAction(formData: FormData, userId: string): Promise<APIResponse<UpdateUserResponse, UpdateUserPayload>> {
   const rawData: UpdateUserPayload = {
     email: formData.get('email') as string,
-    name: formData.get('name') as string,
+    firstName: formData.get('firstName') as string,
     lastName: formData.get('lastName') as string,
     role: formData.get('role') as string,
   }

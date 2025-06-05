@@ -159,8 +159,8 @@ export class OrderService extends BaseAPIRequests {
    */
   async getAllOrders(params?: OrderListParams): Promise<APIResponse<GetOrdersResponse>> {
     const defaultParams: OrderListParams = {
-      page: 0,
-      size: 20,
+      pageNo: 0,
+      pageSize: 20,
       sortBy: 'createdDate',
       sortDir: 'desc'
     };
@@ -474,13 +474,13 @@ export class OrderService extends BaseAPIRequests {
   /**
    * Process layaway payment
    * 
-   * POST /api/orders/{orderId}/layaway-payment
+   * POST /api/orders/{orderId}/laybye-payment
    */
   async processLayawayPayment(
     orderId: number,
     payload: LayawayPaymentPayload
   ): Promise<APIResponse<CreateOrderResponse>> {
-    const url = `/api/orders/${orderId}/layaway-payment`;
+    const url = `/api/orders/${orderId}/laybye-payment`;
 
     try {
       const session = await getServerSession(authOptions);

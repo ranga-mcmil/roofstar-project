@@ -1,4 +1,3 @@
-
 /**
  * users/types.ts
  * 
@@ -14,15 +13,14 @@ export type UpdateUserPayload = z.infer<typeof UpdateUserSchema>;
 export type ChangePasswordPayload = z.infer<typeof ChangePasswordSchema>;
 export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordSchema>;
 
-// Response types
+// Response types matching API spec
 export interface UserDTO {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
   lastName: string;
   role: string;
   branchId: string;
-  active: string
 }
 
 export interface UserPaginationParams {

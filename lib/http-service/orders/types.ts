@@ -193,10 +193,10 @@ export interface PageOrderResponseDTO {
   empty: boolean;
 }
 
-// Parameters for API calls
+// Parameters for API calls - CORRECTED to match API spec
 export interface OrderListParams {
-  page?: number;
-  size?: number;
+  pageNo?: number;    // Changed from 'page' to 'pageNo'
+  pageSize?: number;  // Changed from 'size' to 'pageSize'
   sortBy?: string;
   sortDir?: string;
   orderType?: OrderType;
