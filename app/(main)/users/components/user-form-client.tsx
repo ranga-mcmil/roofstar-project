@@ -1,3 +1,4 @@
+// app/(main)/users/components/user-form-client.tsx - Updated with new roles
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { USER_ROLES } from "@/lib/types";
 
 interface UserFormProps {
   user: UserDTO;
@@ -136,14 +138,14 @@ export function UserFormClient({ user, returnUrl }: UserFormProps) {
         <Label htmlFor="role">
           Role <span className="text-red-500">*</span>
         </Label>
-        <Select name="role" defaultValue={user?.role || "USER"}>
+        <Select name="role" defaultValue={user?.role || USER_ROLES.SALES_REP}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ADMIN">Admin</SelectItem>
-            <SelectItem value="MANAGER">Manager</SelectItem>
-            <SelectItem value="USER">User</SelectItem>
+            <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
+            <SelectItem value={USER_ROLES.MANAGER}>Manager</SelectItem>
+            <SelectItem value={USER_ROLES.SALES_REP}>Sales Rep</SelectItem>
           </SelectContent>
         </Select>
       </div>

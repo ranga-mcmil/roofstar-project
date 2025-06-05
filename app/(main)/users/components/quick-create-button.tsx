@@ -1,3 +1,4 @@
+// app/(main)/users/components/quick-create-button.tsx - Updated with new roles
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { getBranchesAction } from "@/actions/branches";
 import { BranchDTO } from "@/lib/http-service/branches/types";
+import { USER_ROLES } from "@/lib/types";
 
 export function QuickCreateButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,13 +29,13 @@ export function QuickCreateButton() {
   const { toast } = useToast();
   const router = useRouter();
 
-  // Initialize form state
+  // Initialize form state - UPDATED DEFAULT ROLE
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
     lastName: '',
     password: '',
-    role: 'USER',
+    role: USER_ROLES.SALES_REP, // Updated to use new role constant
     branchId: '',
   });
 
@@ -103,7 +105,7 @@ export function QuickCreateButton() {
           firstName: '',
           lastName: '',
           password: '',
-          role: 'USER',
+          role: USER_ROLES.SALES_REP, // Reset to default role
           branchId: '',
         });
         
@@ -213,9 +215,9 @@ export function QuickCreateButton() {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="MANAGER">Manager</SelectItem>
-                    <SelectItem value="USER">User</SelectItem>
+                    <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
+                    <SelectItem value={USER_ROLES.MANAGER}>Manager</SelectItem>
+                    <SelectItem value={USER_ROLES.SALES_REP}>Sales Rep</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

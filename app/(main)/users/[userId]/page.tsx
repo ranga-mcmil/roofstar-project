@@ -1,3 +1,4 @@
+// app/(main)/users/[userId]/page.tsx - Updated getRoleBadge function
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,6 +8,7 @@ import { notFound } from "next/navigation"
 import { getUserAction } from "@/actions/users"
 import { GetUserResponse } from "@/lib/http-service/users/types"
 import { getBranchesAction } from "@/actions/branches"
+import { USER_ROLES } from "@/lib/types"
 
 interface UserDetailsPageProps {
   params: {
@@ -48,16 +50,17 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
     }
   }
 
-  // Get role badge
+  // Get role badge - UPDATED TO USE NEW ROLES
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'ADMIN':
+      case USER_ROLES.ADMIN:
         return <Badge className="bg-purple-500">Admin</Badge>;
-      case 'MANAGER':
+      case USER_ROLES.MANAGER:
         return <Badge className="bg-blue-500">Manager</Badge>;
-      case 'USER':
+      case USER_ROLES.SALES_REP:
+        return <Badge variant="outline">Sales Rep</Badge>;
       default:
-        return <Badge variant="outline">User</Badge>;
+        return <Badge variant="secondary">Unknown Role</Badge>;
     }
   };
 

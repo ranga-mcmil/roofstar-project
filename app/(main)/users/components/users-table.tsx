@@ -1,3 +1,4 @@
+// app/(main)/users/components/users-table.tsx - Updated with new roles
 'use client';
 
 import { useTransition } from 'react';
@@ -19,6 +20,7 @@ import { ServerPagination } from "@/components/server-pagination";
 import { UserDTO } from "@/lib/http-service/users/types";
 import { BranchDTO } from "@/lib/http-service/branches/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { USER_ROLES } from "@/lib/types";
 
 interface UsersTableProps {
   users: UserDTO[];
@@ -65,16 +67,17 @@ export function UsersTable({
     return branch ? branch.name : 'Unknown Branch';
   };
 
-  // Get role badge
+  // Get role badge - UPDATED TO USE NEW ROLES
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'ADMIN':
+      case USER_ROLES.ADMIN:
         return <Badge className="bg-purple-500">Admin</Badge>;
-      case 'MANAGER':
+      case USER_ROLES.MANAGER:
         return <Badge className="bg-blue-500">Manager</Badge>;
-      case 'USER':
+      case USER_ROLES.SALES_REP:
+        return <Badge variant="outline">Sales Rep</Badge>;
       default:
-        return <Badge variant="outline">User</Badge>;
+        return <Badge variant="secondary">Unknown Role</Badge>;
     }
   };
 
@@ -195,3 +198,4 @@ export function UsersTable({
     </>
   );
 }
+                        

@@ -1,3 +1,12 @@
+// lib/types.ts - Updated with new roles
+export const USER_ROLES = {
+  SALES_REP: 'ROLE_SALES_REP',
+  MANAGER: 'ROLE_MANAGER',
+  ADMIN: 'ROLE_ADMIN'
+} as const;
+
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
+
 export interface Referrer {
   id: string
   name: string
@@ -62,8 +71,6 @@ export interface Invoice {
   paymentDate?: string
   saleId?: string // Reference to a sale if this invoice has been paid
 }
-
-export type UserRole = "admin" | "store_manager" | "sales_rep"
 
 export interface Warehouse {
   id: string
