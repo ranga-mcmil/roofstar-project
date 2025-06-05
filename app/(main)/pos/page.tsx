@@ -28,7 +28,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 // Import your actions
 import { getProductsAction } from "@/actions/products"
 import { getCustomersAction, createCustomerAction } from "@/actions/customers"
-import { getBranchesAction } from "@/actions/branches"
 import { getCategoriesAction } from "@/actions/categories"
 import { 
   createQuotationAction, 
@@ -40,7 +39,6 @@ import {
 // Import types
 import { ProductDTO } from "@/lib/http-service/products/types"
 import { CustomerDTO } from "@/lib/http-service/customers/types"
-import { BranchDTO } from "@/lib/http-service/branches/types"
 import { ProductCategoryDTO } from "@/lib/http-service/categories/types"
 import { OrderType, PaymentMethod } from "@/lib/http-service/orders/types"
 import { USER_ROLES } from "@/lib/types"
@@ -303,13 +301,11 @@ export default function POSPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [productsLoading, setProductsLoading] = useState(true)
   const [customersLoading, setCustomersLoading] = useState(true)
-  const [branchesLoading, setBranchesLoading] = useState(true)
   const [dataLoaded, setDataLoaded] = useState(false)
 
   // Data states
   const [products, setProducts] = useState<ProductDTO[]>([])
   const [customers, setCustomers] = useState<CustomerDTO[]>([])
-  const [branches, setBranches] = useState<BranchDTO[]>([])
   const [categories, setCategories] = useState<ProductCategoryDTO[]>([])
 
   // UI states
@@ -319,7 +315,6 @@ export default function POSPage() {
   // Cart and form states
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState("")
-  const [selectedBranch, setSelectedBranch] = useState("")
   const [orderType, setOrderType] = useState<OrderType>("IMMEDIATE_SALE")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH")
   const [notes, setNotes] = useState("")
@@ -353,10 +348,9 @@ export default function POSPage() {
       try {
         const productParams = { pageNo: 0, pageSize: 100 }
 
-        const [productsRes, customersRes, branchesRes, categoriesRes] = await Promise.all([
+        const [productsRes, customersRes, categoriesRes] = await Promise.all([
           getProductsAction(productParams),
           getCustomersAction({ pageNo: 0, pageSize: 100 }),
-          getBranchesAction({ pageNo: 0, pageSize: 50 }),
           getCategoriesAction()
         ])
 
@@ -365,9 +359,6 @@ export default function POSPage() {
           productsCount: productsRes.success ? productsRes.data.content.length : 0,
           customersSuccess: customersRes.success,
           customersCount: customersRes.success ? customersRes.data.content.length : 0,
-          branchesSuccess: branchesRes.success,
-          branchesData: branchesRes.success ? branchesRes.data : branchesRes.error,
-          branchesCount: branchesRes.success ? branchesRes.data.content.length : 0,
           categoriesSuccess: categoriesRes.success,
           categoriesCount: categoriesRes.success ? categoriesRes.data.length : 0
         })
@@ -385,82 +376,6 @@ export default function POSPage() {
         } else {
           console.error('Failed to load customers:', customersRes.error)
           setCustomers([])
-        }
-
-        if (branchesRes.success) {
-          const activeBranches = branchesRes.data.content.filter(b => b.isActive)
-          
-          // Debug logging
-          console.log('Debug branch selection:', {
-            userBranch,
-            userRole,
-            isAdmin,
-            allBranches: branchesRes.data.content.map(b => ({ id: b.id, name: b.name, isActive: b.isActive })),
-            activeBranches: activeBranches.map(b => ({ id: b.id, name: b.name })),
-            sessionData: session?.user
-          })
-          
-          // For Sales Rep, only show their branch and auto-select it
-          if (userBranch && !isAdmin) {
-            // First try to find the user's branch in active branches
-            const userBranchData = activeBranches.find(b => b.id === userBranch)
-            
-            if (userBranchData) {
-              console.log('Found user branch in active branches:', userBranchData)
-              setBranches([userBranchData])
-              setSelectedBranch(userBranch)
-            } else {
-              // If not found in active, check all branches (maybe it's inactive?)
-              const userBranchInAll = branchesRes.data.content.find(b => b.id === userBranch)
-              
-              if (userBranchInAll) {
-                console.warn('User branch found but inactive:', userBranchInAll)
-                // Include the inactive branch for this user
-                setBranches([userBranchInAll])
-                setSelectedBranch(userBranch)
-                toast({
-                  title: "Warning",
-                  description: "Your assigned branch is currently inactive.",
-                  variant: "destructive",
-                })
-              } else {
-                console.error('User branch not found at all:', {
-                  userBranch,
-                  availableBranches: branchesRes.data.content.map(b => b.id)
-                })
-                setBranches(activeBranches)
-                // Fallback: select first available branch or show error
-                if (activeBranches.length > 0) {
-                  setSelectedBranch(activeBranches[0].id)
-                  toast({
-                    title: "Branch not found",
-                    description: "Your assigned branch was not found. Using default branch.",
-                    variant: "destructive",
-                  })
-                } else {
-                  toast({
-                    title: "No branches available",
-                    description: "No active branches found. Please contact administrator.",
-                    variant: "destructive",
-                  })
-                }
-              }
-            }
-          } else {
-            // For admin, show all branches and auto-select first one
-            setBranches(activeBranches)
-            if (activeBranches.length > 0) {
-              setSelectedBranch(activeBranches[0].id)
-            }
-          }
-        } else {
-          console.error('Failed to load branches:', branchesRes.error)
-          setBranches([])
-          toast({
-            title: "Error loading branches",
-            description: branchesRes.error || "Failed to load branch data",
-            variant: "destructive",
-          })
         }
 
         if (categoriesRes.success) {
@@ -482,12 +397,11 @@ export default function POSPage() {
         setDataLoaded(true)
         setProductsLoading(false)
         setCustomersLoading(false)
-        setBranchesLoading(false)
       }
     }
 
     loadData()
-  }, [toast, sessionLoading, isAdmin, userBranch])
+  }, [toast, sessionLoading])
 
   // Show loading if session is still loading
   if (sessionLoading) {
@@ -631,10 +545,10 @@ export default function POSPage() {
     if (isLoading) return { disabled: true, reason: 'Creating order...' }
     if (cartItems.length === 0) return { disabled: true, reason: 'Add items to cart' }
     if (!selectedCustomer) return { disabled: true, reason: 'Select a customer' }
-    if (!selectedBranch) return { disabled: true, reason: 'Select a branch' }
+    if (!userBranch) return { disabled: true, reason: 'No branch assigned to user' }
     
     // More lenient data loading check
-    if (!dataLoaded && (productsLoading || customersLoading || branchesLoading)) {
+    if (!dataLoaded && (productsLoading || customersLoading)) {
       return { disabled: true, reason: 'Loading data...' }
     }
 
@@ -679,6 +593,15 @@ export default function POSPage() {
       return
     }
 
+    if (!userBranch) {
+      toast({
+        title: "No branch assigned",
+        description: "You don't have a branch assigned. Please contact your administrator.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -706,18 +629,18 @@ export default function POSPage() {
 
       switch (orderType) {
         case "QUOTATION":
-          response = await createQuotationAction(formData, customerId, selectedBranch)
+          response = await createQuotationAction(formData, customerId, userBranch)
           break
         case "IMMEDIATE_SALE":
           formData.append('paymentAmount', paymentAmount)
           formData.append('paymentMethod', paymentMethod)
-          response = await createImmediateSaleAction(formData, customerId, selectedBranch)
+          response = await createImmediateSaleAction(formData, customerId, userBranch)
           break
         case "FUTURE_COLLECTION":
           formData.append('paymentAmount', paymentAmount)
           formData.append('paymentMethod', paymentMethod)
           formData.append('expectedCollectionDate', expectedCollectionDate)
-          response = await createFutureCollectionAction(formData, customerId, selectedBranch)
+          response = await createFutureCollectionAction(formData, customerId, userBranch)
           break
         case "LAYAWAY":
           toast({
@@ -765,11 +688,6 @@ export default function POSPage() {
                 <h1 className="text-2xl font-bold">Point of Sale</h1>
                 <p className="text-muted-foreground">
                   Create orders and process transactions
-                  {userBranch && (
-                    <span className="ml-2">
-                      • Branch: {branches.find(b => b.id === userBranch)?.name || 'Loading...'}
-                    </span>
-                  )}
                 </p>
               </div>
             </div>
@@ -989,25 +907,6 @@ export default function POSPage() {
                   </div>
                 </div>
 
-                {/* Branch Selection - Hidden for Sales Rep since it's auto-selected */}
-                {isAdmin && (
-                  <div>
-                    <Label>Branch *</Label>
-                    <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={branchesLoading}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={branchesLoading ? "Loading branches..." : "Select branch"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {branches.map((branch) => (
-                          <SelectItem key={branch.id} value={branch.id}>
-                            {branch.name} - {branch.location}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
                 {/* Payment Details (for non-quotation orders) */}
                 {orderType !== "QUOTATION" && (
                   <>
@@ -1151,7 +1050,6 @@ export default function POSPage() {
                   <div>Debug Info:</div>
                   <div>Data Loaded: {dataLoaded.toString()}</div>
                   <div>User Branch: {userBranch || 'none'}</div>
-                  <div>Selected Branch: {selectedBranch || 'none'}</div>
                   <div>Selected Customer: {selectedCustomer || 'none'}</div>
                   <div>Cart Items: {cartItems.length}</div>
                   <div>Payment Amount: {paymentAmount || 'none'}</div>
@@ -1159,7 +1057,6 @@ export default function POSPage() {
                   <div>Total: ${total.toFixed(2)}</div>
                   <div>Button Disabled: {buttonState.disabled.toString()}</div>
                   <div>Disable Reason: {buttonState.reason || 'none'}</div>
-                  <div>Available Branches: {branches.length}</div>
                   <div>Session User: {JSON.stringify(session?.user || {})}</div>
                 </div>
               )}
@@ -1186,3 +1083,4 @@ export default function POSPage() {
     </div>
   )
 }
+                            
