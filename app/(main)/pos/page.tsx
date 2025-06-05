@@ -190,7 +190,7 @@ function ProductGrid({ products, category, searchQuery, onAddToCart, isLoading, 
 
   // Filter products - only show products from user's branch for non-admin users
   const filteredProducts = products.filter((product) => {
-    // Filter by branch if user has a specific branch (Manager/Sales Rep)
+    // Filter by branch if user has a specific branch (Sales Rep)
     if (currentUserBranch && product.branchId !== currentUserBranch) {
       return false
     }
@@ -334,6 +334,16 @@ export default function POSPage() {
   const userBranch = session?.user?.branchId
   const isAdmin = userRole === USER_ROLES.ADMIN
 
+  // Debug session data
+  console.log('Session debug:', {
+    sessionStatus: status,
+    sessionUser: session?.user,
+    userRole,
+    userBranch,
+    isAdmin,
+    USER_ROLES
+  })
+
   // Load initial data
   useEffect(() => {
     // Don't load data until session is ready
@@ -341,59 +351,135 @@ export default function POSPage() {
 
     const loadData = async () => {
       try {
-        // Load products - filter by branch for non-admin users
-        const productParams = isAdmin ? 
-          { pageNo: 0, pageSize: 100 } : 
-          { pageNo: 0, pageSize: 100 }
+        const productParams = { pageNo: 0, pageSize: 100 }
 
         const [productsRes, customersRes, branchesRes, categoriesRes] = await Promise.all([
-          userBranch ? 
-            getProductsAction(productParams) : // For branch-specific users, we'll filter on client side
-            getProductsAction(productParams),
+          getProductsAction(productParams),
           getCustomersAction({ pageNo: 0, pageSize: 100 }),
           getBranchesAction({ pageNo: 0, pageSize: 50 }),
           getCategoriesAction()
         ])
 
+        console.log('API Results:', {
+          productsSuccess: productsRes.success,
+          productsCount: productsRes.success ? productsRes.data.content.length : 0,
+          customersSuccess: customersRes.success,
+          customersCount: customersRes.success ? customersRes.data.content.length : 0,
+          branchesSuccess: branchesRes.success,
+          branchesData: branchesRes.success ? branchesRes.data : branchesRes.error,
+          branchesCount: branchesRes.success ? branchesRes.data.content.length : 0,
+          categoriesSuccess: categoriesRes.success,
+          categoriesCount: categoriesRes.success ? categoriesRes.data.length : 0
+        })
+
+        // Always set data, even if some calls fail
         if (productsRes.success) {
           setProducts(productsRes.data.content)
+        } else {
+          console.error('Failed to load products:', productsRes.error)
+          setProducts([])
         }
+
         if (customersRes.success) {
           setCustomers(customersRes.data.content)
+        } else {
+          console.error('Failed to load customers:', customersRes.error)
+          setCustomers([])
         }
+
         if (branchesRes.success) {
           const activeBranches = branchesRes.data.content.filter(b => b.isActive)
           
-          // For admin, show all branches. For others, filter to their branch
-          if (isAdmin) {
+          // Debug logging
+          console.log('Debug branch selection:', {
+            userBranch,
+            userRole,
+            isAdmin,
+            allBranches: branchesRes.data.content.map(b => ({ id: b.id, name: b.name, isActive: b.isActive })),
+            activeBranches: activeBranches.map(b => ({ id: b.id, name: b.name })),
+            sessionData: session?.user
+          })
+          
+          // For Sales Rep, only show their branch and auto-select it
+          if (userBranch && !isAdmin) {
+            // First try to find the user's branch in active branches
+            const userBranchData = activeBranches.find(b => b.id === userBranch)
+            
+            if (userBranchData) {
+              console.log('Found user branch in active branches:', userBranchData)
+              setBranches([userBranchData])
+              setSelectedBranch(userBranch)
+            } else {
+              // If not found in active, check all branches (maybe it's inactive?)
+              const userBranchInAll = branchesRes.data.content.find(b => b.id === userBranch)
+              
+              if (userBranchInAll) {
+                console.warn('User branch found but inactive:', userBranchInAll)
+                // Include the inactive branch for this user
+                setBranches([userBranchInAll])
+                setSelectedBranch(userBranch)
+                toast({
+                  title: "Warning",
+                  description: "Your assigned branch is currently inactive.",
+                  variant: "destructive",
+                })
+              } else {
+                console.error('User branch not found at all:', {
+                  userBranch,
+                  availableBranches: branchesRes.data.content.map(b => b.id)
+                })
+                setBranches(activeBranches)
+                // Fallback: select first available branch or show error
+                if (activeBranches.length > 0) {
+                  setSelectedBranch(activeBranches[0].id)
+                  toast({
+                    title: "Branch not found",
+                    description: "Your assigned branch was not found. Using default branch.",
+                    variant: "destructive",
+                  })
+                } else {
+                  toast({
+                    title: "No branches available",
+                    description: "No active branches found. Please contact administrator.",
+                    variant: "destructive",
+                  })
+                }
+              }
+            }
+          } else {
+            // For admin, show all branches and auto-select first one
             setBranches(activeBranches)
-            // Auto-select first branch for admin
             if (activeBranches.length > 0) {
               setSelectedBranch(activeBranches[0].id)
             }
-          } else if (userBranch) {
-            // For Manager/Sales Rep, only show their branch
-            const userBranchData = activeBranches.find(b => b.id === userBranch)
-            if (userBranchData) {
-              setBranches([userBranchData])
-              setSelectedBranch(userBranch)
-            }
-          } else {
-            setBranches(activeBranches)
           }
-        }
-        if (categoriesRes.success) {
-          setCategories(categoriesRes.data)
+        } else {
+          console.error('Failed to load branches:', branchesRes.error)
+          setBranches([])
+          toast({
+            title: "Error loading branches",
+            description: branchesRes.error || "Failed to load branch data",
+            variant: "destructive",
+          })
         }
 
-        setDataLoaded(true)
+        if (categoriesRes.success) {
+          setCategories(categoriesRes.data)
+        } else {
+          console.error('Failed to load categories:', categoriesRes.error)
+          setCategories([])
+        }
+
       } catch (error) {
+        console.error('Error loading data:', error)
         toast({
           title: "Error loading data",
           description: "Failed to load POS data. Please refresh the page.",
           variant: "destructive",
         })
       } finally {
+        // ALWAYS set these to true/false, even if some calls failed
+        setDataLoaded(true)
         setProductsLoading(false)
         setCustomersLoading(false)
         setBranchesLoading(false)
@@ -430,6 +516,7 @@ export default function POSPage() {
     )
   }
 
+  // Restrict to Sales Rep only
   if (userRole !== USER_ROLES.SALES_REP) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -539,32 +626,54 @@ export default function POSPage() {
     setShowCustomerForm(false)
   }
 
+  // Button disabled state logic with better debugging
+  const getButtonDisabledState = () => {
+    if (isLoading) return { disabled: true, reason: 'Creating order...' }
+    if (cartItems.length === 0) return { disabled: true, reason: 'Add items to cart' }
+    if (!selectedCustomer) return { disabled: true, reason: 'Select a customer' }
+    if (!selectedBranch) return { disabled: true, reason: 'Select a branch' }
+    
+    // More lenient data loading check
+    if (!dataLoaded && (productsLoading || customersLoading || branchesLoading)) {
+      return { disabled: true, reason: 'Loading data...' }
+    }
+
+    // Order type specific validation
+    if (orderType !== "QUOTATION") {
+      if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+        return { disabled: true, reason: 'Enter payment amount' }
+      }
+      if (!paymentMethod) {
+        return { disabled: true, reason: 'Select payment method' }
+      }
+    }
+
+    // Immediate sale specific validation
+    if (orderType === "IMMEDIATE_SALE") {
+      const paymentFloat = parseFloat(paymentAmount || "0")
+      if (paymentFloat < total) {
+        return { disabled: true, reason: `Insufficient payment (need $${total.toFixed(2)})` }
+      }
+    }
+
+    // Future collection specific validation
+    if (orderType === "FUTURE_COLLECTION" && !expectedCollectionDate) {
+      return { disabled: true, reason: 'Select collection date' }
+    }
+
+    return { disabled: false, reason: null }
+  }
+
+  const buttonState = getButtonDisabledState()
+
   // Handle order submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (cartItems.length === 0) {
+    if (buttonState.disabled) {
       toast({
-        title: "No items in cart",
-        description: "Please add items to the cart before creating an order.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!selectedCustomer) {
-      toast({
-        title: "No customer selected",
-        description: "Please select a customer before creating an order.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!selectedBranch) {
-      toast({
-        title: "No branch selected",
-        description: "Please select a branch before creating an order.",
+        title: "Cannot create order",
+        description: buttonState.reason || "Please complete all required fields.",
         variant: "destructive",
       })
       return
@@ -600,24 +709,17 @@ export default function POSPage() {
           response = await createQuotationAction(formData, customerId, selectedBranch)
           break
         case "IMMEDIATE_SALE":
-          if (!paymentAmount || !paymentMethod) {
-            throw new Error("Payment amount and method are required for immediate sales")
-          }
           formData.append('paymentAmount', paymentAmount)
           formData.append('paymentMethod', paymentMethod)
           response = await createImmediateSaleAction(formData, customerId, selectedBranch)
           break
         case "FUTURE_COLLECTION":
-          if (!paymentAmount || !paymentMethod || !expectedCollectionDate) {
-            throw new Error("Payment details and collection date are required")
-          }
           formData.append('paymentAmount', paymentAmount)
           formData.append('paymentMethod', paymentMethod)
           formData.append('expectedCollectionDate', expectedCollectionDate)
           response = await createFutureCollectionAction(formData, customerId, selectedBranch)
           break
         case "LAYAWAY":
-          // For layaway, you'd need additional form fields for the layaway plan
           toast({
             title: "Feature not implemented",
             description: "Layaway orders require additional configuration.",
@@ -663,9 +765,9 @@ export default function POSPage() {
                 <h1 className="text-2xl font-bold">Point of Sale</h1>
                 <p className="text-muted-foreground">
                   Create orders and process transactions
-                  {userBranch && !isAdmin && (
+                  {userBranch && (
                     <span className="ml-2">
-                      • Branch: {branches.find(b => b.id === userBranch)?.name}
+                      • Branch: {branches.find(b => b.id === userBranch)?.name || 'Loading...'}
                     </span>
                   )}
                 </p>
@@ -703,7 +805,7 @@ export default function POSPage() {
                   searchQuery={searchQuery}
                   onAddToCart={addToCart}
                   isLoading={productsLoading}
-                  currentUserBranch={!isAdmin ? userBranch : undefined}
+                  currentUserBranch={userBranch}
                 />
               </TabsContent>
 
@@ -714,7 +816,7 @@ export default function POSPage() {
                     searchQuery={searchQuery}
                     onAddToCart={addToCart}
                     isLoading={productsLoading}
-                    currentUserBranch={!isAdmin ? userBranch : undefined}
+                    currentUserBranch={userBranch}
                   />
                 </TabsContent>
               ))}
@@ -887,11 +989,11 @@ export default function POSPage() {
                   </div>
                 </div>
 
-                {/* Branch Selection - Show only if admin or multiple branches available */}
-                {(isAdmin || branches.length > 1) && (
+                {/* Branch Selection - Hidden for Sales Rep since it's auto-selected */}
+                {isAdmin && (
                   <div>
                     <Label>Branch *</Label>
-                    <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={branchesLoading || (!isAdmin && branches.length === 1)}>
+                    <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={branchesLoading}>
                       <SelectTrigger>
                         <SelectValue placeholder={branchesLoading ? "Loading branches..." : "Select branch"} />
                       </SelectTrigger>
@@ -1024,16 +1126,7 @@ export default function POSPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={
-                  isLoading ||
-                  cartItems.length === 0 ||
-                  !selectedCustomer ||
-                  !selectedBranch ||
-                  !dataLoaded ||
-                  (orderType !== "QUOTATION" && (!paymentAmount || !paymentMethod)) ||
-                  (orderType === "FUTURE_COLLECTION" && !expectedCollectionDate) ||
-                  (orderType === "IMMEDIATE_SALE" && parseFloat(paymentAmount || "0") < total)
-                }
+                disabled={buttonState.disabled}
               >
                 {isLoading ? (
                   <>
@@ -1045,16 +1138,30 @@ export default function POSPage() {
                 )}
               </Button>
               
-              {/* Show validation messages */}
-              {cartItems.length === 0 && (
+              {/* Show the reason why button is disabled */}
+              {buttonState.disabled && buttonState.reason && (
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Add items to cart to create an order
+                  {buttonState.reason}
                 </p>
               )}
-              {orderType === "IMMEDIATE_SALE" && paymentAmount && parseFloat(paymentAmount) < total && (
-                <p className="text-xs text-red-600 mt-2 text-center">
-                  Payment amount must be at least ${total.toFixed(2)}
-                </p>
+
+              {/* Debug info in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                  <div>Debug Info:</div>
+                  <div>Data Loaded: {dataLoaded.toString()}</div>
+                  <div>User Branch: {userBranch || 'none'}</div>
+                  <div>Selected Branch: {selectedBranch || 'none'}</div>
+                  <div>Selected Customer: {selectedCustomer || 'none'}</div>
+                  <div>Cart Items: {cartItems.length}</div>
+                  <div>Payment Amount: {paymentAmount || 'none'}</div>
+                  <div>Order Type: {orderType}</div>
+                  <div>Total: ${total.toFixed(2)}</div>
+                  <div>Button Disabled: {buttonState.disabled.toString()}</div>
+                  <div>Disable Reason: {buttonState.reason || 'none'}</div>
+                  <div>Available Branches: {branches.length}</div>
+                  <div>Session User: {JSON.stringify(session?.user || {})}</div>
+                </div>
               )}
             </div>
           </form>
@@ -1079,4 +1186,3 @@ export default function POSPage() {
     </div>
   )
 }
-                              
