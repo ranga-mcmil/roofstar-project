@@ -55,6 +55,7 @@ export function QuickCreateButton() {
         });
         
         // Refresh data without full page reload
+        window.location.href = window.location.pathname;
         router.refresh();
       } else {
         // Show error toast

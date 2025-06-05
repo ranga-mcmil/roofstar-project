@@ -6,7 +6,18 @@ import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Eye, Trash2 } from "lucide-react"
+import { 
+  MoreHorizontal, 
+  Edit, 
+  Eye, 
+  Trash2, 
+  Package, 
+  TrendingUp, 
+  TrendingDown, 
+  History, 
+  AlertTriangle,
+  Plus
+} from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +79,17 @@ export function ProductsTable({
     );
   };
 
+  // Get stock level indicator
+  const getStockBadge = (stockQuantity: number) => {
+    if (stockQuantity === 0) {
+      return <Badge variant="destructive" className="text-xs">Out of Stock</Badge>;
+    } else if (stockQuantity < 10) {
+      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">Low Stock</Badge>;
+    } else {
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">In Stock</Badge>;
+    }
+  };
+
   // Generate skeleton rows for loading state
   const renderSkeletonRows = () => {
     return Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
@@ -76,6 +98,7 @@ export function ProductsTable({
           <Skeleton className="h-4 w-4" />
         </TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
@@ -102,6 +125,7 @@ export function ProductsTable({
               <TableHead>Category</TableHead>
               <TableHead>Color</TableHead>
               <TableHead>Thickness</TableHead>
+              <TableHead>Stock</TableHead>
               <TableHead>Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -112,7 +136,7 @@ export function ProductsTable({
               renderSkeletonRows()
             ) : products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No products found. Try adjusting your filters.
                 </TableCell>
               </TableRow>
@@ -131,6 +155,14 @@ export function ProductsTable({
                   <TableCell>{product.productCategoryName}</TableCell>
                   <TableCell>{product.colorName}</TableCell>
                   <TableCell>{product.thickness} mm</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="font-medium">{product.stockQuantity || 0} units</span>
+                      <div className="w-fit">
+                        {getStockBadge(product.stockQuantity || 0)}
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{formatCurrency(product.price)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -140,8 +172,8 @@ export function ProductsTable({
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel>Product Actions</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
                           <Link href={`/products/${product.id}`}>
                             <Eye className="mr-2 h-4 w-4" /> View Details
@@ -149,16 +181,54 @@ export function ProductsTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/products/${product.id}/edit`}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
+                            <Edit className="mr-2 h-4 w-4" /> Edit Product
                           </Link>
                         </DropdownMenuItem>
+                        
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Inventory Actions</DropdownMenuLabel>
+                        
+                        <DropdownMenuItem asChild>
+                          <Link href={`/inventory/products/${product.id}/history`}>
+                            <History className="mr-2 h-4 w-4" /> View History
+                          </Link>
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuItem asChild>
+                          <Link href={`/inventory/products/${product.id}/add`}>
+                            <Plus className="mr-2 h-4 w-4 text-green-600" /> Add Stock
+                          </Link>
+                        </DropdownMenuItem>
+                        
+                        {(product.stockQuantity || 0) > 0 && (
+                          <DropdownMenuItem asChild>
+                            <Link href={`/inventory/products/${product.id}/adjustments/remove`}>
+                              <TrendingDown className="mr-2 h-4 w-4 text-red-600" /> Remove Stock
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+                        
+                        <DropdownMenuItem asChild>
+                          <Link href={`/inventory/products/${product.id}/adjustments/correct`}>
+                            <Package className="mr-2 h-4 w-4 text-blue-600" /> Correct Stock
+                          </Link>
+                        </DropdownMenuItem>
+                        
+                        {(product.stockQuantity || 0) < 10 && (
+                          <DropdownMenuItem asChild>
+                            <Link href={`/inventory/products/${product.id}/add`} className="text-amber-600 focus:text-amber-600">
+                              <AlertTriangle className="mr-2 h-4 w-4" /> Low Stock Alert
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+                        
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link
                             href={`/products/${product.id}/delete`}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Product
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>

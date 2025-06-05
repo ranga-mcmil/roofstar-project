@@ -232,9 +232,9 @@ export function SiteHeader() {
         <div className="flex items-center justify-end space-x-3">
           <nav className="flex items-center space-x-1">
             <Button variant="ghost" size="icon" asChild>
-              <Link href="/sales">
+              <Link href="/orders">
                 <FileText className="h-5 w-5" />
-                <span className="sr-only">Sales</span>
+                <span className="sr-only">Orders</span>
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>
@@ -273,9 +273,7 @@ export function SiteHeader() {
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{userName}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {formattedRole}
-                      </p>
+                      
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
