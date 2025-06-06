@@ -206,6 +206,17 @@ export function SiteHeader() {
                     >
                       Reports
                     </Link>
+
+                    <Link
+                      href="/products"
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                        pathname === "/products" 
+                          ? "bg-primary/10 text-primary" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      Products
+                    </Link>
                   </>
                 )}
               </nav>
@@ -243,6 +254,7 @@ export function SiteHeader() {
                 <span className="sr-only">Reports</span>
               </Link>
             </Button>
+            
 
             {/* User Dropdown */}
             {isMounted && status === "loading" && (

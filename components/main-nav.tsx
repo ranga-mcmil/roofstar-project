@@ -92,14 +92,14 @@ export function MainNav() {
       >
         Reports
       </Link>
-      {/* <Link
-        href="/invoices"
+      <Link
+        href="/products"
         className={`text-sm font-medium ${
-          pathname.startsWith("/invoices") ? "text-primary" : "text-muted-foreground"
+          pathname.startsWith("/products") ? "text-primary" : "text-muted-foreground"
         } transition-colors hover:text-primary`}
       >
-        Invoices
-      </Link> */}
+        Products
+      </Link>
     </nav>
   )
 }
