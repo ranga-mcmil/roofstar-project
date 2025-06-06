@@ -85,6 +85,41 @@ export function SiteHeader() {
   const formattedRole = userRole ? formatRole(userRole) : "User"
   const roleColorClass = userRole ? getRoleColor(userRole) : getRoleColor(USER_ROLES.SALES_REP)
 
+  // Get mobile nav items based on role
+  const getMobileNavItems = () => {
+    if (!userRole) return []
+    
+    switch (userRole) {
+      case USER_ROLES.ADMIN:
+        return [
+          { href: "/", label: "Dashboard" },
+          { href: "/branches", label: "Branches" },
+          { href: "/users", label: "Users" },
+          { href: "/orders", label: "Orders" }
+        ]
+      
+      case USER_ROLES.MANAGER:
+        return [
+          { href: "/", label: "Dashboard" },
+          { href: "/products", label: "Products" },
+          { href: "/orders", label: "Orders" }
+        ]
+      
+      case USER_ROLES.SALES_REP:
+        return [
+          { href: "/pos", label: "Point of Sale" },
+          { href: "/orders", label: "Orders" }
+        ]
+      
+      default:
+        return []
+    }
+  }
+
+  // Determine which icons to show on desktop
+  const shouldShowOrdersIcon = userRole === USER_ROLES.MANAGER || userRole === USER_ROLES.SALES_REP || userRole === USER_ROLES.ADMIN
+  const shouldShowReportsIcon = userRole === USER_ROLES.ADMIN
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4 md:px-8">
@@ -133,92 +168,21 @@ export function SiteHeader() {
                 </div>
               )}
 
+              {/* Mobile Navigation */}
               <nav className="flex flex-col gap-4 px-2 py-4">
-                {isMounted && (
-                  <>
-                    <Link
-                      href="/"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname === "/" 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      href="/pos"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname === "/pos" 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Point of Sale
-                    </Link>
-                    <Link
-                      href="/sales"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname.startsWith("/sales") 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Sales
-                    </Link>
-                    <Link
-                      href="/products"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname === "/products" 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Products
-                    </Link>
-                    <Link
-                      href="/inventory"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname === "/inventory" 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Inventory
-                    </Link>
-                    <Link
-                      href="/customers"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname === "/customers" 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Customers
-                    </Link>
-                    <Link
-                      href="/reports"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname === "/reports" 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Reports
-                    </Link>
-
-                    <Link
-                      href="/products"
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        pathname === "/products" 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      Products
-                    </Link>
-                  </>
-                )}
+                {isMounted && getMobileNavItems().map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
+                        ? "bg-primary/10 text-primary" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </nav>
             </SheetContent>
           </Sheet>
@@ -242,19 +206,25 @@ export function SiteHeader() {
 
         <div className="flex items-center justify-end space-x-3">
           <nav className="flex items-center space-x-1">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/orders">
-                <FileText className="h-5 w-5" />
-                <span className="sr-only">Orders</span>
-              </Link>
-            </Button>
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/reports">
-                <BarChart3 className="h-5 w-5" />
-                <span className="sr-only">Reports</span>
-              </Link>
-            </Button>
+            {/* Conditionally render Orders icon for Manager and Sales Rep */}
+            {shouldShowOrdersIcon && (
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/orders">
+                  <FileText className="h-5 w-5" />
+                  <span className="sr-only">Orders</span>
+                </Link>
+              </Button>
+            )}
             
+            {/* Conditionally render Reports icon for Admin */}
+            {shouldShowReportsIcon && (
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/reports">
+                  <BarChart3 className="h-5 w-5" />
+                  <span className="sr-only">Reports</span>
+                </Link>
+              </Button>
+            )}
 
             {/* User Dropdown */}
             {isMounted && status === "loading" && (
@@ -285,7 +255,6 @@ export function SiteHeader() {
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{userName}</p>
-                      
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

@@ -2,104 +2,65 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useAuth } from "./auth-provider"
+import { useSession } from "next-auth/react"
+import { USER_ROLES } from "@/lib/types"
 
 export function MainNav() {
   const pathname = usePathname()
-  const { user, hasPermission } = useAuth()
+  const { data: session } = useSession()
+  
+  const userRole = session?.user?.role
+
+  // If no session or role, don't render anything
+  if (!session || !userRole) {
+    return null
+  }
+
+  // Define navigation items based on role
+  const getNavItems = () => {
+    switch (userRole) {
+      case USER_ROLES.ADMIN:
+        return [
+          { href: "/", label: "Dashboard" },
+          { href: "/branches", label: "Branches" },
+          { href: "/users", label: "Users" }
+        ]
+      
+      case USER_ROLES.MANAGER:
+        return [
+          { href: "/", label: "Dashboard" },
+          { href: "/products", label: "Products" }
+          // Note: Orders will be shown as icon in site-header
+        ]
+      
+      case USER_ROLES.SALES_REP:
+        return [
+          { href: "/pos", label: "Point of Sale" }
+          // Note: Orders will be shown as icon in site-header
+        ]
+      
+      default:
+        return []
+    }
+  }
+
+  const navItems = getNavItems()
 
   return (
     <nav className="flex items-center space-x-4 lg:space-x-6">
-      <Link
-        href="/"
-        className={`text-sm font-medium ${
-          pathname === "/" ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Dashboard
-      </Link>
-      <Link
-        href="/pos"
-        className={`text-sm font-medium ${
-          pathname === "/pos" ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Point of Sale
-      </Link>
-      {/* <Link
-        href="/sales"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/sales") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Sales
-      </Link>
-      <Link
-        href="/products"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/products") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Products
-      </Link>
-      <Link
-        href="/inventory"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/inventory") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Inventory
-      </Link>
-      <Link
-        href="/referrers"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/referrers") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Referrers
-      </Link> */}
-      <Link
-        href="/warehouses"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/warehouses") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Warehouses
-      </Link>
-
-      <Link
-        href="/branches"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/branches") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Branches
-      </Link>
-      
-      <Link
-        href="/users"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/users") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Users
-      </Link>
-      <Link
-        href="/reports"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/reports") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Reports
-      </Link>
-      <Link
-        href="/products"
-        className={`text-sm font-medium ${
-          pathname.startsWith("/products") ? "text-primary" : "text-muted-foreground"
-        } transition-colors hover:text-primary`}
-      >
-        Products
-      </Link>
+      {navItems.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={`text-sm font-medium ${
+            pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
+              ? "text-primary" 
+              : "text-muted-foreground"
+          } transition-colors hover:text-primary`}
+        >
+          {item.label}
+        </Link>
+      ))}
     </nav>
   )
 }
