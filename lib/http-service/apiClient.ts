@@ -29,9 +29,7 @@ export class APIClient {
 
 
     console.log("**")
-    console.log(options)
     console.log(`Request to: ${this.baseUrl}${url}`)
-    console.log(response)
     console.log("**")
    
 
@@ -93,6 +91,9 @@ export class APIClient {
   async delete<T>(url: string, options: RequestInit = {}): Promise<APIResponse<T>> {
     return this.request<T>(url, { method: 'DELETE', ...options });
   }
+  
+
+
 }
 
 export const apiClient = new APIClient(process.env.BACKEND_BASE_URL!);

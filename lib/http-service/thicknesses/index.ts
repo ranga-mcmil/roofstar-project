@@ -91,7 +91,7 @@ export class ThicknessService extends BaseAPIRequests {
    * Update an existing thickness
    * 
    * PUT /api/thicknesses/{thicknessId}
-   */
+  */
   async updateThickness(payload: UpdateThicknessPayload, thicknessId: number): Promise<APIResponse<UpdateThicknessResponse>> {
     const url = `/api/thicknesses/${thicknessId}`;
     

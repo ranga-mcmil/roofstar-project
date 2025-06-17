@@ -58,7 +58,7 @@ export function LoginForm() {
         title: "Login successful",
         description: "Welcome to RoofStar Industries POS",
       })
-      router.push(signInResponse?.url ?? '/');
+      router.push('/');
     } else {
       toast({
         title: "Login failed",
