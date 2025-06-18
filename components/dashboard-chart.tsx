@@ -1,60 +1,19 @@
+// components/dashboard-chart.tsx
 "use client"
 
 import { useTheme } from "next-themes"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-const data = [
-  {
-    name: "Jan",
-    total: 4000,
-  },
-  {
-    name: "Feb",
-    total: 3000,
-  },
-  {
-    name: "Mar",
-    total: 2000,
-  },
-  {
-    name: "Apr",
-    total: 2780,
-  },
-  {
-    name: "May",
-    total: 1890,
-  },
-  {
-    name: "Jun",
-    total: 2390,
-  },
-  {
-    name: "Jul",
-    total: 3490,
-  },
-  {
-    name: "Aug",
-    total: 4000,
-  },
-  {
-    name: "Sep",
-    total: 5000,
-  },
-  {
-    name: "Oct",
-    total: 4500,
-  },
-  {
-    name: "Nov",
-    total: 5500,
-  },
-  {
-    name: "Dec",
-    total: 6000,
-  },
-]
+interface ChartData {
+  name: string
+  total: number
+}
 
-export function DashboardChart() {
+interface DashboardChartProps {
+  data: ChartData[]
+}
+
+export function DashboardChart({ data }: DashboardChartProps) {
   const { theme } = useTheme()
   const isDark = theme === "dark"
 
