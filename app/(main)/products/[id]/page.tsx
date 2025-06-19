@@ -144,9 +144,15 @@ export default async function ProductDetailsPage({ params, searchParams }: Produ
                   <div className="text-sm font-medium">Thickness</div>
                   <div>{product.thickness} mm</div>
                 </div>
+                {/* Updated to show branch name instead of ID */}
                 <div className="space-y-1">
                   <div className="text-sm font-medium">Branch</div>
-                  <div>{product.branchId || "Not assigned"}</div>
+                  <div>{product.branchName || "Not assigned"}</div>
+                </div>
+                {/* Added Unit of Measure field */}
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">Unit of Measure</div>
+                  <div>{product.unitOfMeasure || "Not specified"}</div>
                 </div>
               </div>
               <div className="mt-4">
@@ -167,7 +173,7 @@ export default async function ProductDetailsPage({ params, searchParams }: Produ
             <div className="space-y-3">
               <div className="space-y-1">
                 <div className="text-sm font-medium">Current Stock</div>
-                <div className="text-2xl font-bold">{product.stockQuantity || 0} units</div>
+                <div className="text-2xl font-bold">{product.stockQuantity || 0} {product.unitOfMeasure || 'units'}</div>
               </div>
               <div className="mt-4">
                 <Button variant="outline" asChild>

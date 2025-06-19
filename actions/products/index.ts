@@ -24,6 +24,7 @@ export async function createProductAction(formData: FormData): Promise<APIRespon
     thicknessId: parseInt(formData.get('thicknessId') as string),
     productCategoryId: parseInt(formData.get('productCategoryId') as string),
     price: parseFloat(formData.get('price') as string),
+    unitOfMeasureId: parseInt(formData.get('unitOfMeasureId') as string), // Added missing field
   }
 
   // Validate the form data
@@ -63,6 +64,7 @@ export async function updateProductAction(formData: FormData, productId: number)
     thicknessId: parseInt(formData.get('thicknessId') as string),
     productCategoryId: parseInt(formData.get('productCategoryId') as string),
     price: parseFloat(formData.get('price') as string),
+    unitOfMeasureId: parseInt(formData.get('unitOfMeasureId') as string), // Added missing field
   }
 
   // Validate the form data

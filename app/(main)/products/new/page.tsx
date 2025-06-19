@@ -5,6 +5,7 @@ import Link from "next/link"
 import { getThicknessesAction } from "@/actions/thicknesses"
 import { getColorsAction } from "@/actions/colors"
 import { getCategoriesAction } from "@/actions/categories"
+import { getMeasurementUnitsAction } from "@/actions/measurement-units" // Added missing import
 import { ProductFormClient } from "../components/product-form-client"
 
 interface NewProductPageProps {
@@ -15,16 +16,23 @@ interface NewProductPageProps {
 
 export default async function NewProductPage({ searchParams }: NewProductPageProps) {
   // Fetch related data in parallel
-  const [thicknessesResponse, colorsResponse, categoriesResponse] = await Promise.all([
+  const [
+    thicknessesResponse, 
+    colorsResponse, 
+    categoriesResponse,
+    measurementUnitsResponse // Added missing measurement units fetch
+  ] = await Promise.all([
     getThicknessesAction(),
     getColorsAction(),
-    getCategoriesAction()
+    getCategoriesAction(),
+    getMeasurementUnitsAction() // Added missing measurement units fetch
   ]);
   
-  // Get thicknesses, colors, and categories for the form
+  // Get related data for the form
   const thicknesses = thicknessesResponse.success ? thicknessesResponse.data : [];
   const colors = colorsResponse.success ? colorsResponse.data : [];
   const categories = categoriesResponse.success ? categoriesResponse.data : [];
+  const measurementUnits = measurementUnitsResponse.success ? measurementUnitsResponse.data : []; // Added missing measurement units
 
   // Pre-selected category if provided in search params
   const selectedCategoryId = searchParams.categoryId ? parseInt(searchParams.categoryId, 10) : undefined;
@@ -50,6 +58,7 @@ export default async function NewProductPage({ searchParams }: NewProductPagePro
             thicknesses={thicknesses}
             colors={colors}
             categories={categories}
+            measurementUnits={measurementUnits} // Added missing measurement units
             returnUrl="/products"
             isEditing={false}
             selectedCategoryId={selectedCategoryId}

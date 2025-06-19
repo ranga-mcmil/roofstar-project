@@ -3,6 +3,7 @@
  * 
  * This file contains the TypeScript type definitions for order-related data
  * based on the OpenAPI specification.
+ * Updated to match API spec exactly.
  */
 
 import { z } from 'zod';
@@ -36,11 +37,8 @@ export interface OrderItemDTO {
   quantity: number;
   length: number;
   width: number;
-  unitPrice: number;
   discount: number;
   notes?: string;
-  area: number;
-  lineTotalBeforeDiscount: number;
 }
 
 export interface LayawayPlanDTO {
@@ -52,19 +50,20 @@ export interface LayawayPlanDTO {
 }
 
 export interface PaymentDTO {
-  orderId: number;
   amount: number;
   paymentMethod: PaymentMethod;
   paymentReference?: string;
   notes?: string;
 }
 
-// Response DTOs
+// Response DTOs - Updated to match API spec exactly
 export interface OrderItemResponseDTO {
   id: number;
   productName: string;
   productCode: string;
   quantity: number;
+  length: number; // Added missing field
+  width: number; // Added missing field
   unitPrice: number;
   totalPrice: number;
   notes?: string;
@@ -163,7 +162,7 @@ export interface SalesReportDTO {
   endDate: string; // date
 }
 
-// Pagination and Page interfaces
+// Pagination and Page interfaces - Updated to match API spec
 export interface PageableObject {
   paged: boolean;
   pageNumber: number;
@@ -193,10 +192,10 @@ export interface PageOrderResponseDTO {
   empty: boolean;
 }
 
-// Parameters for API calls - CORRECTED to match API spec
+// Parameters for API calls - Fixed to match API spec exactly
 export interface OrderListParams {
-  pageNo?: number;    // Changed from 'page' to 'pageNo'
-  pageSize?: number;  // Changed from 'size' to 'pageSize'
+  pageNo?: number;    // Correct parameter name
+  pageSize?: number;  // Correct parameter name
   sortBy?: string;
   sortDir?: string;
   orderType?: OrderType;

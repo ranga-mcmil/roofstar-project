@@ -1,8 +1,8 @@
-
 /**
- * branches/types.ts (Enhanced)
+ * branches/types.ts
  * 
- * This file contains the enhanced TypeScript type definitions for branch-related data.
+ * This file contains the TypeScript type definitions for branch-related data.
+ * Updated to match API specification exactly.
  */
 
 import { z } from 'zod';
@@ -12,13 +12,13 @@ import { CreateBranchSchema, UpdateBranchSchema } from './schema';
 export type CreateBranchPayload = z.infer<typeof CreateBranchSchema>;
 export type UpdateBranchPayload = z.infer<typeof UpdateBranchSchema>;
 
-// Address types
+// Address types - Updated to match API spec
 export interface AddressDto {
   street: string;
   city: string;
   province: string;
-  country: string;
-  postalCode: string;
+  country?: string; // Made optional to match API spec
+  postalCode?: string; // Made optional to match API spec
 }
 
 // Response types

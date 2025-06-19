@@ -20,12 +20,14 @@ import { formatCurrency } from "@/lib/utils";
 import { ThicknessDTO } from "@/lib/http-service/thicknesses/types";
 import { ColorDTO } from "@/lib/http-service/colors/types";
 import { ProductCategoryDTO } from "@/lib/http-service/categories/types";
+import { MeasurementUnitDTO } from "@/lib/http-service/measurement-units/types";
 
 interface ProductFormProps {
   product?: ProductDTO;
   thicknesses: ThicknessDTO[];
   colors: ColorDTO[];
   categories: ProductCategoryDTO[];
+  measurementUnits: MeasurementUnitDTO[]; // Added missing measurement units
   returnUrl: string;
   isEditing: boolean;
   selectedCategoryId?: number;
@@ -35,7 +37,8 @@ export function ProductFormClient({
   product, 
   thicknesses, 
   colors, 
-  categories, 
+  categories,
+  measurementUnits, // Added missing measurement units
   returnUrl, 
   isEditing, 
   selectedCategoryId 
@@ -145,7 +148,7 @@ export function ProductFormClient({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="productCategoryId">
             Category <span className="text-red-500">*</span>
@@ -215,6 +218,31 @@ export function ProductFormClient({
               {thicknesses.map((thickness) => (
                 <SelectItem key={thickness.id} value={String(thickness.id)}>
                   {thickness.thickness} mm
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Added missing Unit of Measure field */}
+        <div className="space-y-2">
+          <Label htmlFor="unitOfMeasureId">
+            Unit of Measure <span className="text-red-500">*</span>
+          </Label>
+          <Select 
+            name="unitOfMeasureId"
+            defaultValue={
+              product?.unitOfMeasure 
+                ? String(measurementUnits.find(u => u.unitOfMeasure === product.unitOfMeasure)?.id) 
+                : ""
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select unit" />
+            </SelectTrigger>
+            <SelectContent>
+              {measurementUnits.map((unit) => (
+                <SelectItem key={unit.id} value={String(unit.id)}>
+                  {unit.unitOfMeasure}
                 </SelectItem>
               ))}
             </SelectContent>

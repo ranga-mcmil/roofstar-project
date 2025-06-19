@@ -3,6 +3,7 @@
  * 
  * This file contains the TypeScript type definitions for inventory-related data
  * based on the OpenAPI specification.
+ * Updated to match API spec exactly.
  */
 
 import { z } from 'zod';
@@ -12,12 +13,18 @@ import { AddInventorySchema, AdjustInventorySchema } from './schema';
 export type AddInventoryPayload = z.infer<typeof AddInventorySchema>;
 export type AdjustInventoryPayload = z.infer<typeof AdjustInventorySchema>;
 
-// Response types from API based on OpenAPI spec
+// Response types from API based on OpenAPI spec - Updated to match exactly
 export interface InventoryDTO {
   id: number;
   productName: string;
+  createdAt: string; // Added missing field
   quantity: number;
-  remarks: string;
+  width?: number; // Added missing field
+  length?: number; // Added missing field
+  weight?: number; // Added missing field
+  batchNumber: string; // Added missing field
+  totalStockQuantity: number; // Added missing field
+  remarks?: string;
 }
 
 export interface InventoryAdjustmentDTO {
@@ -25,7 +32,12 @@ export interface InventoryAdjustmentDTO {
   movementType: string;
   productName: string;
   quantity: number;
-  reason: string;
+  createdAt: string; // Added missing field
+  width?: number; // Added missing field
+  length?: number; // Added missing field
+  weight?: number; // Added missing field
+  totalStockQuantity: number; // Added missing field
+  reason: string; // Changed from 'remarks' to 'reason' to match API
 }
 
 export interface PaginationParams {

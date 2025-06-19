@@ -7,6 +7,7 @@ import { getProductAction } from "@/actions/products"
 import { getThicknessesAction } from "@/actions/thicknesses"
 import { getColorsAction } from "@/actions/colors"
 import { getCategoriesAction } from "@/actions/categories"
+import { getMeasurementUnitsAction } from "@/actions/measurement-units" // Added missing import
 import { GetProductResponse } from "@/lib/http-service/products/types"
 import { ProductFormClient } from "../../components/product-form-client"
 
@@ -20,11 +21,18 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   const id = parseInt(params.id, 10);
 
   // Fetch product and related data in parallel
-  const [productResponse, thicknessesResponse, colorsResponse, categoriesResponse] = await Promise.all([
+  const [
+    productResponse, 
+    thicknessesResponse, 
+    colorsResponse, 
+    categoriesResponse,
+    measurementUnitsResponse // Added missing measurement units fetch
+  ] = await Promise.all([
     getProductAction(id),
     getThicknessesAction(),
     getColorsAction(),
-    getCategoriesAction()
+    getCategoriesAction(),
+    getMeasurementUnitsAction() // Added missing measurement units fetch
   ]);
   
   // Check for success and extract product data
@@ -38,10 +46,11 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     notFound();
   }
 
-  // Get thicknesses, colors, and categories for the form
+  // Get related data for the form
   const thicknesses = thicknessesResponse.success ? thicknessesResponse.data : [];
   const colors = colorsResponse.success ? colorsResponse.data : [];
   const categories = categoriesResponse.success ? categoriesResponse.data : [];
+  const measurementUnits = measurementUnitsResponse.success ? measurementUnitsResponse.data : []; // Added missing measurement units
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -65,6 +74,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             thicknesses={thicknesses}
             colors={colors}
             categories={categories}
+            measurementUnits={measurementUnits} // Added missing measurement units
             returnUrl={`/products/${id}`} 
             isEditing={true}
           />

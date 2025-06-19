@@ -1,9 +1,9 @@
-
 /**
  * products/types.ts
  * 
  * This file contains the TypeScript type definitions for product-related data
  * based on the OpenAPI specification.
+ * Updated to match API spec exactly.
  */
 
 import { z } from 'zod';
@@ -13,15 +13,17 @@ import { CreateProductSchema, UpdateProductSchema } from './schema';
 export type CreateProductPayload = z.infer<typeof CreateProductSchema>;
 export type UpdateProductPayload = z.infer<typeof UpdateProductSchema>;
 
-// Response types from API based on OpenAPI spec
+// Response types from API based on OpenAPI spec - Updated to match exactly
 export interface ProductDTO {
   id: number;
   name: string;
   code: number;
   colorName: string;
   thickness: number;
-  branchId: string;
+  branchId: string; // UUID format
+  branchName: string; // Added missing field
   productCategoryName: string;
+  unitOfMeasure: string; // Added missing field
   price: number;
   isActive: boolean;
   stockQuantity: number;

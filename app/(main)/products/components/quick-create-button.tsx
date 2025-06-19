@@ -10,6 +10,7 @@ import { createProductAction } from "@/actions/products";
 import { getThicknessesAction } from "@/actions/thicknesses";
 import { getColorsAction } from "@/actions/colors";
 import { getCategoriesAction } from "@/actions/categories";
+import { getMeasurementUnitsAction } from "@/actions/measurement-units"; // Added missing import
 import { Loader2, Plus } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { 
@@ -32,6 +33,7 @@ export function QuickCreateButton() {
   const [thicknesses, setThicknesses] = useState([]);
   const [colors, setColors] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [measurementUnits, setMeasurementUnits] = useState([]); // Added missing measurement units
 
   // Initialize form state
   const [formData, setFormData] = useState({
@@ -40,7 +42,8 @@ export function QuickCreateButton() {
     price: '',
     thicknessId: '',
     colorId: '',
-    productCategoryId: ''
+    productCategoryId: '',
+    unitOfMeasureId: '' // Added missing field
   });
 
   // Load required data when modal opens
@@ -49,15 +52,17 @@ export function QuickCreateButton() {
       const loadData = async () => {
         setDataLoading(true);
         try {
-          const [thicknessesRes, colorsRes, categoriesRes] = await Promise.all([
+          const [thicknessesRes, colorsRes, categoriesRes, measurementUnitsRes] = await Promise.all([
             getThicknessesAction(),
             getColorsAction(),
-            getCategoriesAction()
+            getCategoriesAction(),
+            getMeasurementUnitsAction() // Added missing measurement units fetch
           ]);
 
           if (thicknessesRes.success) setThicknesses(thicknessesRes.data);
           if (colorsRes.success) setColors(colorsRes.data);
           if (categoriesRes.success) setCategories(categoriesRes.data);
+          if (measurementUnitsRes.success) setMeasurementUnits(measurementUnitsRes.data); // Added missing measurement units
         } catch (error) {
           console.error("Error loading form data:", error);
           toast({
@@ -105,6 +110,7 @@ export function QuickCreateButton() {
       submitData.append('thicknessId', formData.thicknessId);
       submitData.append('colorId', formData.colorId);
       submitData.append('productCategoryId', formData.productCategoryId);
+      submitData.append('unitOfMeasureId', formData.unitOfMeasureId); // Added missing field
 
       // Submit to the server action
       const response = await createProductAction(submitData);
@@ -125,7 +131,8 @@ export function QuickCreateButton() {
           price: '',
           thicknessId: '',
           colorId: '',
-          productCategoryId: ''
+          productCategoryId: '',
+          unitOfMeasureId: '' // Added missing field
         });
         
         // Force a complete page refresh rather than just a router refresh
@@ -216,7 +223,7 @@ export function QuickCreateButton() {
                 />
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="productCategoryId" className="font-medium">Category *</Label>
                   <Select 
@@ -258,7 +265,9 @@ export function QuickCreateButton() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="thicknessId" className="font-medium">Thickness *</Label>
                   <Select 
@@ -274,6 +283,28 @@ export function QuickCreateButton() {
                       {thicknesses.map((thickness) => (
                         <SelectItem key={thickness.id} value={String(thickness.id)}>
                           {thickness.thickness} mm
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Added missing Unit of Measure field */}
+                <div className="grid gap-2">
+                  <Label htmlFor="unitOfMeasureId" className="font-medium">Unit of Measure *</Label>
+                  <Select 
+                    name="unitOfMeasureId"
+                    value={formData.unitOfMeasureId}
+                    onValueChange={(value) => handleSelectChange('unitOfMeasureId', value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {measurementUnits.map((unit) => (
+                        <SelectItem key={unit.id} value={String(unit.id)}>
+                          {unit.unitOfMeasure}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -310,3 +341,4 @@ export function QuickCreateButton() {
     </Dialog>
   );
 }
+          

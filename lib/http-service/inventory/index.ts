@@ -3,6 +3,7 @@
  * 
  * This file contains the InventoryService class that implements API requests
  * to the inventory-controller endpoints.
+ * Updated to match API specification exactly.
  */
 
 import { apiClient, APIResponse } from "@/lib/http-service/apiClient";
@@ -23,12 +24,16 @@ import { authOptions } from "@/lib/auth/next-auth-options";
 export class InventoryService extends BaseAPIRequests {
 
   /**
-   * Add inventory to a product
+   * Add inventory to a product with batch
    * 
-   * POST /api/inventory/products/{productId}
+   * POST /api/inventory/products/{productId}/batches/{batchId}
    */
-  async addInventory(productId: number, payload: AddInventoryPayload): Promise<APIResponse<Record<string, string>>> {
-    const url = `/api/inventory/products/${productId}`;
+  async addInventory(
+    productId: number, 
+    batchId: number, // Added missing batchId parameter
+    payload: AddInventoryPayload
+  ): Promise<APIResponse<Record<string, string>>> {
+    const url = `/api/inventory/products/${productId}/batches/${batchId}`;
 
     try {
       const session = await getServerSession(authOptions);
@@ -47,14 +52,15 @@ export class InventoryService extends BaseAPIRequests {
   /**
    * Adjust inventory for a product
    * 
-   * POST /api/inventory/products/{productId}/adjustments/{movementType}
+   * POST /api/inventory/products/{productId}/batches/{batchId}/adjustments/{movementType}
    */
   async adjustInventory(
     productId: number, 
+    batchId: number, // Added missing batchId parameter
     movementType: string, 
     payload: AdjustInventoryPayload
   ): Promise<APIResponse<Record<string, string>>> {
-    const url = `/api/inventory/products/${productId}/adjustments/${movementType}`;
+    const url = `/api/inventory/products/${productId}/batches/${batchId}/adjustments/${movementType}`;
 
     try {
       const session = await getServerSession(authOptions);
@@ -195,7 +201,7 @@ export class InventoryService extends BaseAPIRequests {
       const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.get(url, { headers });
-      return this.handleResponse<GetInventoryByBranchResponse>(response);
+      return this.handleResponse<GetInventoryByBatchResponse>(response);
     } catch (error) {
       console.error('Inventory Service request failed:', error);
       return {

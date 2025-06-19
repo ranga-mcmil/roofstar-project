@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, Download, Settings, Palette, Layers, Tag } from "lucide-react"
+import { Plus, Download, Settings, Palette, Layers, Tag, Ruler } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,6 +86,17 @@ export default async function ProductsPage(props: {
                   </Link>
                 </DropdownMenuItem>
                 
+                {/* Added measurement units menu item */}
+                <DropdownMenuItem asChild>
+                  <Link href="/measurement-units">
+                    <Ruler className="mr-2 h-4 w-4 text-orange-600" />
+                    <div className="flex flex-col">
+                      <span>Measurement Units</span>
+                      <span className="text-xs text-muted-foreground">Manage units of measure</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
                 
                 <DropdownMenuItem asChild>
@@ -106,6 +117,14 @@ export default async function ProductsPage(props: {
                   <Link href="/thicknesses" className="text-purple-600 focus:text-purple-600">
                     <Plus className="mr-2 h-4 w-4" />
                     Quick Add Thickness
+                  </Link>
+                </DropdownMenuItem>
+                
+                {/* Added measurement units quick add */}
+                <DropdownMenuItem asChild>
+                  <Link href="/measurement-units" className="text-orange-600 focus:text-orange-600">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Quick Add Unit
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

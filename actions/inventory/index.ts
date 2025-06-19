@@ -16,8 +16,15 @@ import {
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 
-export async function addInventoryAction(formData: FormData, productId: number): Promise<APIResponse<Record<string, string>, AddInventoryPayload>> {
+export async function addInventoryAction(
+  formData: FormData, 
+  productId: number, 
+  batchId: number // Added missing batchId parameter
+): Promise<APIResponse<Record<string, string>, AddInventoryPayload>> {
   const rawData: AddInventoryPayload = {
+    length: formData.get('length') ? parseFloat(formData.get('length') as string) : undefined,
+    width: formData.get('width') ? parseFloat(formData.get('width') as string) : undefined,
+    weight: formData.get('weight') ? parseFloat(formData.get('weight') as string) : undefined,
     quantity: parseFloat(formData.get('quantity') as string),
     remarks: formData.get('remarks') as string || undefined,
   }
@@ -34,11 +41,12 @@ export async function addInventoryAction(formData: FormData, productId: number):
     }
   }
 
-  const res = await inventoryService.addInventory(productId, validatedData.data as AddInventoryPayload);
+  const res = await inventoryService.addInventory(productId, batchId, validatedData.data as AddInventoryPayload);
 
   if (res.success) {
     revalidatePath(`/products/${productId}`);
     revalidatePath(`/inventory/products/${productId}/history`);
+    revalidatePath(`/batches/${batchId}`);
     return {
       success: true,
       data: res.data,
@@ -55,11 +63,15 @@ export async function addInventoryAction(formData: FormData, productId: number):
 export async function adjustInventoryAction(
   formData: FormData, 
   productId: number, 
+  batchId: number, // Added missing batchId parameter
   movementType: string
 ): Promise<APIResponse<Record<string, string>, AdjustInventoryPayload>> {
   const rawData: AdjustInventoryPayload = {
+    length: formData.get('length') ? parseFloat(formData.get('length') as string) : undefined,
+    width: formData.get('width') ? parseFloat(formData.get('width') as string) : undefined,
+    weight: formData.get('weight') ? parseFloat(formData.get('weight') as string) : undefined,
     quantity: parseFloat(formData.get('quantity') as string),
-    reason: formData.get('reason') as string,
+    remarks: formData.get('remarks') as string,
   }
 
   // Validate the form data
@@ -76,6 +88,7 @@ export async function adjustInventoryAction(
 
   const res = await inventoryService.adjustInventory(
     productId, 
+    batchId,
     movementType, 
     validatedData.data as AdjustInventoryPayload
   );
@@ -84,6 +97,7 @@ export async function adjustInventoryAction(
     revalidatePath(`/products/${productId}`);
     revalidatePath(`/inventory/products/${productId}/history`);
     revalidatePath(`/inventory/adjustments`);
+    revalidatePath(`/batches/${batchId}`);
     return {
       success: true,
       data: res.data,

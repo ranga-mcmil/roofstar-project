@@ -103,6 +103,7 @@ export function ProductsTable({
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell className="text-right">
           <Skeleton className="h-8 w-8 rounded-full ml-auto" />
@@ -125,6 +126,7 @@ export function ProductsTable({
               <TableHead>Category</TableHead>
               <TableHead>Color</TableHead>
               <TableHead>Thickness</TableHead>
+              <TableHead>Unit</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -136,7 +138,7 @@ export function ProductsTable({
               renderSkeletonRows()
             ) : products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   No products found. Try adjusting your filters.
                 </TableCell>
               </TableRow>
@@ -155,9 +157,11 @@ export function ProductsTable({
                   <TableCell>{product.productCategoryName}</TableCell>
                   <TableCell>{product.colorName}</TableCell>
                   <TableCell>{product.thickness} mm</TableCell>
+                  {/* Added Unit of Measure column */}
+                  <TableCell>{product.unitOfMeasure || 'N/A'}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 items-start">
-                      <span className="font-medium">{product.stockQuantity || 0} units</span>
+                      <span className="font-medium">{product.stockQuantity || 0} {product.unitOfMeasure || 'units'}</span>
                       <div className="w-fit">
                         {getStockBadge(product.stockQuantity || 0)}
                       </div>
