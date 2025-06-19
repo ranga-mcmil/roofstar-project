@@ -9,6 +9,7 @@ import {
   AdjustInventoryPayload,
   GetInventoryHistoryResponse,
   GetInventoryByBranchResponse,
+  GetInventoryByBatchResponse,
   GetInventoryAdjustmentsResponse,
   PaginationParams
 } from "@/lib/http-service/inventory/types";
@@ -114,4 +115,28 @@ export async function getInventoryAdjustmentsAction(
   params?: PaginationParams
 ): Promise<APIResponse<GetInventoryAdjustmentsResponse>> {
   return await inventoryService.getInventoryAdjustments(params);
+}
+
+export async function getInventoryByBatchAction(
+  batchNumber: string, 
+  params?: PaginationParams
+): Promise<APIResponse<GetInventoryByBatchResponse>> {
+  return await inventoryService.getInventoryByBatch(batchNumber, params);
+}
+
+/**
+ * Get inventory by batch with revalidation - useful for pages that need fresh data
+ */
+export async function getInventoryByBatchWithRevalidationAction(
+  batchNumber: string, 
+  params?: PaginationParams
+): Promise<APIResponse<GetInventoryByBatchResponse>> {
+  const res = await inventoryService.getInventoryByBatch(batchNumber, params);
+  
+  if (res.success) {
+    revalidatePath(`/inventory/batches/${batchNumber}/history`);
+    revalidatePath('/inventory');
+  }
+  
+  return res;
 }

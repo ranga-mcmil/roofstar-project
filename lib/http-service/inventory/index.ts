@@ -13,6 +13,7 @@ import {
   AdjustInventoryPayload,
   GetInventoryHistoryResponse,
   GetInventoryByBranchResponse,
+  GetInventoryByBatchResponse,
   GetInventoryAdjustmentsResponse,
   PaginationParams
 } from "./types";
@@ -161,6 +162,40 @@ export class InventoryService extends BaseAPIRequests {
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.get(url, { headers });
       return this.handleResponse<GetInventoryAdjustmentsResponse>(response);
+    } catch (error) {
+      console.error('Inventory Service request failed:', error);
+      return {
+        success: false,
+        error: (error as Error).message || 'An unknown error occurred',
+      };
+    }
+  }
+
+  /**
+   * Get inventory history for a batch with pagination
+   * 
+   * GET /api/inventory/batches/{batchNumber}/history
+   */
+  async getInventoryByBatch(
+    batchNumber: string, 
+    params?: PaginationParams
+  ): Promise<APIResponse<GetInventoryByBatchResponse>> {
+    const defaultParams: PaginationParams = {
+      page: 0, // Note: API uses 'page' instead of 'pageNo' for this endpoint
+      size: 10, // Note: API uses 'size' instead of 'pageSize' for this endpoint
+      sortBy: 'id',
+      sortDir: 'desc'
+    };
+
+    const queryParams = { ...defaultParams, ...params };
+    const queryString = new URLSearchParams(queryParams as any).toString();
+    const url = `/api/inventory/batches/${encodeURIComponent(batchNumber)}/history?${queryString}`;
+
+    try {
+      const session = await getServerSession(authOptions);
+      const headers = await this.apiHeaders.getHeaders(session);
+      const response = await this.client.get(url, { headers });
+      return this.handleResponse<GetInventoryByBranchResponse>(response);
     } catch (error) {
       console.error('Inventory Service request failed:', error);
       return {

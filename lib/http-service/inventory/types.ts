@@ -1,4 +1,3 @@
-
 /**
  * inventory/types.ts
  * 
@@ -49,4 +48,5 @@ export interface PaginationResponse<T> {
 
 export type GetInventoryHistoryResponse = PaginationResponse<InventoryDTO>;
 export type GetInventoryByBranchResponse = PaginationResponse<InventoryDTO>;
+export type GetInventoryByBatchResponse = PaginationResponse<InventoryDTO>;
 export type GetInventoryAdjustmentsResponse = PaginationResponse<InventoryAdjustmentDTO>;
