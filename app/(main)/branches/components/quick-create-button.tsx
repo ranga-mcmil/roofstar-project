@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createBranchAction } from "@/actions/branches";
-import { Zap, Loader2, Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useRouter } from 'next/navigation';
 
 export function QuickCreateButton() {
@@ -34,7 +33,6 @@ export function QuickCreateButton() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,11 +97,6 @@ export function QuickCreateButton() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {/* <Button variant="secondary" size="sm" className="gap-1">
-          <Zap className="h-4 w-4" />
-          Quick Create
-        </Button> */}
-
         <Button>
             <Plus className="mr-2 h-4 w-4" /> New Branch
         </Button>
@@ -141,6 +134,19 @@ export function QuickCreateButton() {
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="street" className="font-medium">Street Address *</Label>
+              <Input
+                id="street"
+                name="street"
+                value={formData.street}
+                onChange={handleChange}
+                required
+                placeholder="Enter street address"
+                className="w-full"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="city" className="font-medium">City *</Label>
               <Input
                 id="city"
@@ -168,30 +174,17 @@ export function QuickCreateButton() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="country" className="font-medium">Country *</Label>
+                <Label htmlFor="country" className="font-medium">Country</Label>
                 <Input
                   id="country"
                   name="country"
                   value={formData.country}
                   onChange={handleChange}
-                  required
                   placeholder="Enter country"
                   className="w-full"
                   disabled={isLoading}
                 />
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="street" className="font-medium">Street Address</Label>
-              <Input
-                id="street"
-                name="street"
-                value={formData.street}
-                onChange={handleChange}
-                placeholder="Enter street address"
-                className="w-full"
-                disabled={isLoading}
-              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="postalCode" className="font-medium">Postal Code</Label>

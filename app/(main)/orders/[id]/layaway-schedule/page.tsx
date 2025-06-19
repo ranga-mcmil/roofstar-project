@@ -1,4 +1,4 @@
-// app/(main)/orders/[id]/layaway-schedule/page.tsx - COMPLETE VERSION
+// app/(main)/orders/[id]/layaway-schedule/page.tsx
 "use client"
 
 import { useEffect, useState } from "react"
@@ -10,7 +10,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { getLayawayScheduleAction } from "@/actions/orders"
-import { LayawayScheduleDTO } from "@/lib/http-service/orders/types"
+import { LayawayScheduleDTO, LayawayInstallmentDTO } from "@/lib/http-service/orders/types"
 import { formatCurrency } from "@/lib/utils"
 
 export default function LayawaySchedulePage() {
@@ -79,7 +79,7 @@ export default function LayawaySchedulePage() {
     )
   }
 
-  const getInstallmentStatus = (installment: any) => {
+  const getInstallmentStatus = (installment: LayawayInstallmentDTO) => {
     if (installment.paid) {
       return (
         <Badge className="bg-green-100 text-green-800 border-green-200">

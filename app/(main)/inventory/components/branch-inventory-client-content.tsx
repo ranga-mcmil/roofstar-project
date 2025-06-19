@@ -69,7 +69,7 @@ export default function BranchInventoryClientContent({
       setLoading(true);
       
       try {
-        // API uses page/size instead of pageNo/pageSize
+        // API uses page/size instead of pageNo/pageSize for branch inventory
         const inventoryResponse = await getInventoryByBranchAction(branchId, {
           page: page - 1, // API is 0-indexed
           size: pageSize,
@@ -142,6 +142,16 @@ export default function BranchInventoryClientContent({
   // Calculate pagination details
   const startIndex = (page - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+  // Format date from ISO string
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return "N/A";
+    }
+  };
   
   return (
     <>
@@ -156,7 +166,10 @@ export default function BranchInventoryClientContent({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead>Product Name</TableHead>
+                <TableHead>Batch</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Remarks</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -167,7 +180,10 @@ export default function BranchInventoryClientContent({
                 // Loading skeleton rows
                 Array.from({ length: pageSize }).map((_, index) => (
                   <TableRow key={`skeleton-${index}`}>
+                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
                     <TableCell className="text-right">
@@ -177,14 +193,19 @@ export default function BranchInventoryClientContent({
                 ))
               ) : inventory.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No inventory records found for this branch. Try adjusting your filters or check back later.
                   </TableCell>
                 </TableRow>
               ) : (
                 inventory.map((entry) => (
                   <TableRow key={entry.id}>
+                    <TableCell>{entry.id}</TableCell>
+                    <TableCell>
+                      {formatDate(entry.createdAt)}
+                    </TableCell>
                     <TableCell className="font-medium">{entry.productName}</TableCell>
+                    <TableCell>{entry.batchNumber || "N/A"}</TableCell>
                     <TableCell>{entry.quantity}</TableCell>
                     <TableCell className="max-w-xs truncate">
                       {entry.remarks || "No remarks"}
@@ -204,6 +225,13 @@ export default function BranchInventoryClientContent({
                               <Eye className="mr-2 h-4 w-4" /> View Product
                             </Link>
                           </DropdownMenuItem>
+                          {entry.batchNumber && (
+                            <DropdownMenuItem asChild>
+                              <Link href={`/inventory/batches/${entry.batchNumber}/history`}>
+                                <Eye className="mr-2 h-4 w-4" /> View Batch History
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Eye, FileText, Printer, Trash2 } from "lucide-react"
+import { MoreHorizontal, Edit, Eye, FileText, Printer, Trash2, CheckCircle, XCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,10 +58,12 @@ export function BranchesTable({
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+        <CheckCircle className="w-3 h-3 mr-1" />
         Active
       </Badge>
     ) : (
       <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+        <XCircle className="w-3 h-3 mr-1" />
         Inactive
       </Badge>
     );
@@ -113,7 +115,7 @@ export function BranchesTable({
               </TableRow>
             ) : (
               branches.map((branch) => (
-                <TableRow key={branch.id}>
+                <TableRow key={branch.id} className="hover:bg-muted/50">
                   <TableCell>
                     <input
                       type="checkbox"
@@ -121,10 +123,26 @@ export function BranchesTable({
                       disabled
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{branch.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link 
+                      href={`/branches/${branch.id}`}
+                      className="hover:underline"
+                    >
+                      {branch.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{branch.location}</TableCell>
                   <TableCell>{getStatusBadge(branch.isActive)}</TableCell>
-                  <TableCell>{branch.address.city}, {branch.address.province}</TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {branch.address.city}, {branch.address.province}
+                      {branch.address.country && (
+                        <div className="text-muted-foreground text-xs">
+                          {branch.address.country}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -140,18 +158,25 @@ export function BranchesTable({
                             <Eye className="mr-2 h-4 w-4" /> View Details
                           </Link>
                         </DropdownMenuItem>
-                        {/* Edit Branch - Navigation-based approach */}
                         <DropdownMenuItem asChild>
                           <Link href={`/branches/${branch.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" /> Edit
                           </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link
                             href={`/branches/${branch.id}/${branch.isActive ? "deactivate" : "activate"}`}
                           >
-                            <FileText className="mr-2 h-4 w-4" />
-                            {branch.isActive ? "Deactivate" : "Activate"}
+                            {branch.isActive ? (
+                              <>
+                                <XCircle className="mr-2 h-4 w-4" /> Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="mr-2 h-4 w-4" /> Activate
+                              </>
+                            )}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>

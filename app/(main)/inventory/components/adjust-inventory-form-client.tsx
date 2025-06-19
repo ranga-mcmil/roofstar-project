@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { adjustInventoryAction } from "@/actions/inventory";
 import { ProductDTO } from "@/lib/http-service/products/types";
+import { BatchDTO } from "@/lib/http-service/batches/types";
 import { Loader2, TrendingUp, TrendingDown, Pencil } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -17,29 +19,45 @@ interface AdjustInventoryFormProps {
   returnUrl: string;
   productId: number;
   movementType: string;
+  availableBatches: BatchDTO[];
 }
 
 export function AdjustInventoryFormClient({ 
   product, 
   returnUrl, 
   productId,
-  movementType
+  movementType,
+  availableBatches
 }: AdjustInventoryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quantity, setQuantity] = useState<string>('');
-  const [reason, setReason] = useState<string>('');
+  const [length, setLength] = useState<string>('');
+  const [width, setWidth] = useState<string>('');
+  const [weight, setWeight] = useState<string>('');
+  const [batchId, setBatchId] = useState<string>('');
+  const [remarks, setRemarks] = useState<string>('');
   const { toast } = useToast();
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    
+    if (!batchId) {
+      toast({
+        title: "Error",
+        description: "Please select a batch.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const formData = new FormData(event.currentTarget);
       
-      // Submit to the server action
-      const response = await adjustInventoryAction(formData, productId, movementType);
+      // Submit to the server action with batchId
+      const response = await adjustInventoryAction(formData, productId, parseInt(batchId), movementType);
 
       if (response.success) {
         const actionText = getActionText();
@@ -118,12 +136,11 @@ export function AdjustInventoryFormClient({
     }
   };
 
-  // Handle quantity change and validation
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  // Handle numeric input changes
+  const handleNumericChange = (value: string, setter: (value: string) => void) => {
     // Allow only positive numbers
     if (!value || /^\d*\.?\d*$/.test(value)) {
-      setQuantity(value);
+      setter(value);
     }
   };
 
@@ -142,6 +159,80 @@ export function AdjustInventoryFormClient({
       </Alert>
 
       <div className="space-y-2">
+        <Label htmlFor="batchId">
+          Batch <span className="text-red-500">*</span>
+        </Label>
+        <Select name="batchId" value={batchId} onValueChange={setBatchId} required>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a batch" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableBatches.map((batch) => (
+              <SelectItem key={batch.id} value={batch.id.toString()}>
+                {batch.batchNumber} {batch.description && `- ${batch.description}`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-sm text-muted-foreground">
+          Select the batch for this inventory adjustment.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="length">
+            Length
+          </Label>
+          <Input
+            id="length"
+            name="length"
+            type="number"
+            step="any"
+            value={length}
+            onChange={(e) => handleNumericChange(e.target.value, setLength)}
+            placeholder="Enter length"
+            min="0"
+            className="w-full"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="width">
+            Width
+          </Label>
+          <Input
+            id="width"
+            name="width"
+            type="number"
+            step="any"
+            value={width}
+            onChange={(e) => handleNumericChange(e.target.value, setWidth)}
+            placeholder="Enter width"
+            min="0"
+            className="w-full"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="weight">
+            Weight
+          </Label>
+          <Input
+            id="weight"
+            name="weight"
+            type="number"
+            step="any"
+            value={weight}
+            onChange={(e) => handleNumericChange(e.target.value, setWeight)}
+            placeholder="Enter weight"
+            min="0"
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="quantity" className={actionText.color}>
           Quantity to {actionText.title} <span className="text-red-500">*</span>
         </Label>
@@ -151,7 +242,7 @@ export function AdjustInventoryFormClient({
           type="number"
           step="any"
           value={quantity}
-          onChange={handleQuantityChange}
+          onChange={(e) => handleNumericChange(e.target.value, setQuantity)}
           placeholder={`Enter quantity to ${actionText.past.toLowerCase()}`}
           required
           min="0.01"
@@ -163,14 +254,14 @@ export function AdjustInventoryFormClient({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reason">
+        <Label htmlFor="remarks">
           Reason <span className="text-red-500">*</span>
         </Label>
         <Textarea
-          id="reason"
-          name="reason"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          id="remarks"
+          name="remarks"
+          value={remarks}
+          onChange={(e) => setRemarks(e.target.value)}
           placeholder={`Explain why you are ${actionText.gerund} inventory`}
           className="h-32 resize-none"
           required
@@ -183,8 +274,10 @@ export function AdjustInventoryFormClient({
         </Button>
         <Button 
           type="submit" 
-          disabled={isSubmitting || !quantity || !reason}
-          className={`bg-${actionText.color.replace('text-', '')} hover:bg-${actionText.color.replace('text-', '')}-700`}
+          disabled={isSubmitting || !quantity || !remarks || !batchId}
+          className={actionText.color === 'text-green-600' ? 'bg-green-600 hover:bg-green-700' : 
+                     actionText.color === 'text-red-600' ? 'bg-red-600 hover:bg-red-700' : 
+                     'bg-blue-600 hover:bg-blue-700'}
         >
           {isSubmitting ? (
             <>

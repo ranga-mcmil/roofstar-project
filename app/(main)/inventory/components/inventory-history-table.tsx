@@ -78,13 +78,24 @@ export function InventoryHistoryTable({
     }
   };
 
+  // Format date from ISO string
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return "N/A";
+    }
+  };
+
   // Generate skeleton rows for loading state
   const renderSkeletonRows = () => {
     return Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
       <TableRow key={`skeleton-${index}`}>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-48" /></TableCell>
         <TableCell className="text-right">
           <Skeleton className="h-8 w-8 rounded-full ml-auto" />
@@ -101,6 +112,7 @@ export function InventoryHistoryTable({
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead>Batch</TableHead>
               <TableHead>Quantity</TableHead>
               <TableHead>Remarks</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -112,7 +124,7 @@ export function InventoryHistoryTable({
               renderSkeletonRows()
             ) : history.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No inventory history found. Try adjusting your filters or check back later.
                 </TableCell>
               </TableRow>
@@ -121,8 +133,10 @@ export function InventoryHistoryTable({
                 <TableRow key={entry.id}>
                   <TableCell>{entry.id}</TableCell>
                   <TableCell>
-                    {/* Mock date - in real app, API would return timestamp */}
-                    {new Date().toLocaleDateString()}
+                    {formatDate(entry.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    {entry.batchNumber || "N/A"}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <div className="flex items-center">
@@ -159,6 +173,16 @@ export function InventoryHistoryTable({
                             <Pencil className="mr-2 h-4 w-4" /> Correct Stock
                           </Link>
                         </DropdownMenuItem>
+                        {entry.batchNumber && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href={`/inventory/batches/${entry.batchNumber}/history`}>
+                                <Pencil className="mr-2 h-4 w-4" /> View Batch History
+                              </Link>
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

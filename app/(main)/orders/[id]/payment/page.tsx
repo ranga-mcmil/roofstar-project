@@ -96,8 +96,6 @@ export default function OrderPaymentPage() {
       if (paymentReference) formData.append('paymentReference', paymentReference)
       if (notes) formData.append('notes', notes)
 
-      // For now, we'll use the layaway payment action for all payment types
-      // In a real implementation, you might have different endpoints for different order types
       const response = await processLayawayPaymentAction(formData, orderId)
 
       if (response.success) {
@@ -122,6 +120,15 @@ export default function OrderPaymentPage() {
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Validate amount input
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Allow only positive numbers with up to 2 decimal places
+    if (!value || /^\d*\.?\d{0,2}$/.test(value)) {
+      setAmount(value)
     }
   }
 
@@ -171,6 +178,23 @@ export default function OrderPaymentPage() {
               <p className="text-muted-foreground">This order is already fully paid.</p>
             </div>
           </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className="text-green-600 font-semibold text-lg mb-2">
+                  Order Fully Paid
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  This order has been fully paid. No additional payment is required.
+                </p>
+                <Button asChild>
+                  <Link href={`/orders/${orderId}`}>
+                    View Order Details
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </main>
       </div>
     )
@@ -207,15 +231,13 @@ export default function OrderPaymentPage() {
                   <div className="flex gap-2 mt-1">
                     <Input
                       id="amount"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      max={order.balanceAmount}
+                      type="text"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="Enter payment amount"
+                      onChange={handleAmountChange}
+                      placeholder="0.00"
                       required
                       disabled={isSubmitting}
+                      className="flex-1"
                     />
                     <Button
                       type="button"
@@ -226,6 +248,9 @@ export default function OrderPaymentPage() {
                       Full
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Maximum: {formatCurrency(order.balanceAmount)}
+                  </p>
                 </div>
 
                 <div>
@@ -258,6 +283,9 @@ export default function OrderPaymentPage() {
                     disabled={isSubmitting}
                     className="mt-1"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optional reference for this payment
+                  </p>
                 </div>
 
                 <div>
@@ -285,7 +313,7 @@ export default function OrderPaymentPage() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !amount || parseFloat(amount) <= 0}
                     className="flex-1"
                   >
                     {isSubmitting ? (
@@ -325,7 +353,7 @@ export default function OrderPaymentPage() {
                   <span className="font-bold text-red-600">{formatCurrency(order.balanceAmount)}</span>
                 </div>
                 
-                {amount && !isNaN(parseFloat(amount)) && (
+                {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
                   <>
                     <div className="border-t pt-3 space-y-2">
                       <div className="flex justify-between text-sm">
@@ -335,12 +363,35 @@ export default function OrderPaymentPage() {
                       <div className="flex justify-between">
                         <span className="font-medium">New Balance:</span>
                         <span className="font-bold">
-                          {formatCurrency(order.balanceAmount - parseFloat(amount))}
+                          {formatCurrency(Math.max(0, order.balanceAmount - parseFloat(amount)))}
                         </span>
                       </div>
                     </div>
                   </>
                 )}
+              </div>
+
+              {/* Order Information */}
+              <div className="mt-6 p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-medium mb-3">Order Information</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Order Type:</span>
+                    <span>{order.orderType.replace('_', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Status:</span>
+                    <span>{order.status.replace('_', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Branch:</span>
+                    <span>{order.branchName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Created:</span>
+                    <span>{new Date(order.createdDate).toLocaleDateString()}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Recent Payments */}
@@ -349,11 +400,22 @@ export default function OrderPaymentPage() {
                   <h4 className="font-medium mb-3">Recent Payments</h4>
                   <div className="space-y-2">
                     {order.payments.slice(-3).map((payment) => (
-                      <div key={payment.id} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
-                        <span>{formatCurrency(payment.amount)}</span>
-                        <span className="text-muted-foreground">
-                          {new Date(payment.paymentDate).toLocaleDateString()}
-                        </span>
+                      <div key={payment.id} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded">
+                        <div>
+                          <div className="font-medium">{formatCurrency(payment.amount)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {payment.paymentMethod.replace('_', ' ')}
+                            {payment.paymentReference && ` • ${payment.paymentReference}`}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(payment.paymentDate).toLocaleDateString()}
+                          </div>
+                          {payment.reversed && (
+                            <div className="text-xs text-red-600">Reversed</div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

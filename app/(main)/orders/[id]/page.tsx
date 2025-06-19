@@ -3,14 +3,13 @@
 
 import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
   ArrowLeft, 
   Download, 
   Loader2, 
   Printer, 
-  Edit, 
   CreditCard,
   Package,
   CheckCircle,
@@ -102,11 +101,40 @@ export default function OrderDetailsPage() {
     setIsExporting(true)
     setTimeout(() => {
       try {
-        const filename = `Order_${order?.orderNumber}_${order?.customerName.replace(/\s+/g, "_")}.pdf`
+        // Create CSV content for the order
+        const headers = ["Item", "Product Code", "Quantity", "Length", "Width", "Unit Price", "Total Price", "Notes"]
+        const rows = order?.orderItems.map(item => [
+          item.productName,
+          item.productCode,
+          item.quantity.toString(),
+          item.length?.toString() || "",
+          item.width?.toString() || "",
+          item.unitPrice.toString(),
+          item.totalPrice.toString(),
+          item.notes || ""
+        ]) || []
+
+        const csvContent = [
+          `Order Details - ${order?.orderNumber}`,
+          `Customer: ${order?.customerName}`,
+          `Date: ${order ? new Date(order.createdDate).toLocaleDateString() : ''}`,
+          `Total: ${order ? formatCurrency(order.totalAmount) : ''}`,
+          "",
+          headers.join(","),
+          ...rows.map(row => row.join(","))
+        ].join("\n")
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+        const url = URL.createObjectURL(blob)
+        const filename = `Order_${order?.orderNumber}_${order?.customerName.replace(/\s+/g, "_")}.csv`
         const link = document.createElement("a")
-        link.href = "#"
+        link.href = url
         link.setAttribute("download", filename)
+        link.style.visibility = "hidden"
+        document.body.appendChild(link)
         link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
 
         toast({
           title: "Order exported",
@@ -361,12 +389,20 @@ export default function OrderDetailsPage() {
               </AlertDialog>
             )}
             <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-              <Download className="mr-2 h-4 w-4" />
-              {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Download"}
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {isExporting ? "Exporting..." : "Download"}
             </Button>
             <Button onClick={handlePrint} disabled={isPrinting}>
-              <Printer className="mr-2 h-4 w-4" />
-              {isPrinting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Print"}
+              {isPrinting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="mr-2 h-4 w-4" />
+              )}
+              {isPrinting ? "Printing..." : "Print"}
             </Button>
           </div>
         </div>
@@ -458,12 +494,13 @@ export default function OrderDetailsPage() {
             <CardTitle>Order Items</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border rounded-md">
+            <div className="border rounded-md overflow-hidden">
               <table className="w-full">
                 <thead className="bg-muted/50">
                   <tr className="border-b">
                     <th className="p-3 text-left">Item</th>
                     <th className="p-3 text-center">Quantity</th>
+                    <th className="p-3 text-center">Dimensions</th>
                     <th className="p-3 text-right">Unit Price</th>
                     <th className="p-3 text-right">Total</th>
                   </tr>
@@ -483,6 +520,13 @@ export default function OrderDetailsPage() {
                         </div>
                       </td>
                       <td className="p-3 text-center">{item.quantity}</td>
+                      <td className="p-3 text-center">
+                        {item.length && item.width ? (
+                          <span className="text-sm">{item.length} × {item.width}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </td>
                       <td className="p-3 text-right">{formatCurrency(item.unitPrice)}</td>
                       <td className="p-3 text-right font-medium">{formatCurrency(item.totalPrice)}</td>
                     </tr>
@@ -490,7 +534,7 @@ export default function OrderDetailsPage() {
                 </tbody>
                 <tfoot className="bg-muted/50">
                   <tr>
-                    <td colSpan={3} className="p-3 text-right font-medium">Total:</td>
+                    <td colSpan={4} className="p-3 text-right font-medium">Total:</td>
                     <td className="p-3 text-right font-bold text-lg">{formatCurrency(order.totalAmount)}</td>
                   </tr>
                 </tfoot>

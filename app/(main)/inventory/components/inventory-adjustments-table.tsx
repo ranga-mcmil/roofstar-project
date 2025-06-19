@@ -90,11 +90,22 @@ export function InventoryAdjustmentsTable({
     return `${prefix}${quantity}`;
   };
 
+  // Format date from ISO string
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return "N/A";
+    }
+  };
+
   // Generate skeleton rows for loading state
   const renderSkeletonRows = () => {
     return Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
       <TableRow key={`skeleton-${index}`}>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -113,6 +124,7 @@ export function InventoryAdjustmentsTable({
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
+              <TableHead>Date</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Quantity</TableHead>
@@ -126,7 +138,7 @@ export function InventoryAdjustmentsTable({
               renderSkeletonRows()
             ) : adjustments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No adjustments found. Try adjusting your filters.
                 </TableCell>
               </TableRow>
@@ -134,6 +146,9 @@ export function InventoryAdjustmentsTable({
               adjustments.map((adjustment) => (
                 <TableRow key={adjustment.id}>
                   <TableCell>{adjustment.id}</TableCell>
+                  <TableCell>
+                    {formatDate(adjustment.createdAt)}
+                  </TableCell>
                   <TableCell className="font-medium">{adjustment.productName}</TableCell>
                   <TableCell>{getMovementTypeBadge(adjustment.movementType)}</TableCell>
                   <TableCell className={`font-medium ${

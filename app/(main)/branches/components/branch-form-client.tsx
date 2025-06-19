@@ -91,13 +91,14 @@ export function BranchFormClient({ branch, returnUrl }: BranchFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="street">
-          Street Address
+          Street Address <span className="text-red-500">*</span>
         </Label>
         <Input
           id="street"
           name="street"
           defaultValue={branch?.address?.street || ""}
           placeholder="Enter street address"
+          required
         />
       </div>
 
