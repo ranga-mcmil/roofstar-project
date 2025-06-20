@@ -15,7 +15,7 @@ interface EditBatchPageProps {
 }
 
 export default async function EditBatchPage({ params }: EditBatchPageProps) {
-  const id = parseInt(params.id, 10);
+  const id = parseInt(params.id);
 
   // Fetch batch and related data in parallel
   const [
