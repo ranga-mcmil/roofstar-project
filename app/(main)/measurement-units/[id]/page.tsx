@@ -35,7 +35,7 @@ export default async function MeasurementUnitDetailsPage({ params, searchParams 
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8" >
         {/* Error message if present */}
         {searchParams.error && (
           <div className="p-3 bg-red-50 text-red-800 rounded-md">
@@ -177,9 +177,9 @@ export default async function MeasurementUnitDetailsPage({ params, searchParams 
                   </Link>
                 </Button>
               </div>
+            </div>
             </CardContent>
           </Card>
-        </div>
       </main>
     </div>
   )
