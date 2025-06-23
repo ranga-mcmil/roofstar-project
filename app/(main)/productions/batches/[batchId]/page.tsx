@@ -8,6 +8,8 @@ import { getBatchAction } from "@/actions/batches"
 import { GetProductionsByBatchResponse } from "@/lib/http-service/productions/types"
 import { GetBatchResponse } from "@/lib/http-service/batches/types"
 import { ProductionsTable } from "../../components/productions-table"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth/next-auth-options"
 
 interface ProductionsByBatchPageProps {
   params: {
@@ -24,6 +26,28 @@ export default async function ProductionsByBatchPage({ params, searchParams }: P
   const batchId = parseInt(params.batchId, 10);
   const page = parseInt(searchParams.page || "1", 10);
   const pageSize = parseInt(searchParams.pageSize || "10", 10);
+
+  const session = await getServerSession(authOptions)
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log(session?.user.branchId)
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+  console.log("*****")
+
 
   // Fetch batch and productions data
   const [batchResponse, productionsResponse] = await Promise.all([

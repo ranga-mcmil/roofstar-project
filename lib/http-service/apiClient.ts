@@ -27,13 +27,15 @@ export class APIClient {
   private async request<T>(url: string, options: RequestInit): Promise<APIResponse<T>> {
     const response = await fetch(`${this.baseUrl}${url}`, options);
 
-
     console.log("**")
-    console.log(`Request to: ${this.baseUrl}${url}`)
+    console.log("**")
+    console.log("**")
+    console.log(`Request to: ${this.baseUrl}${url}`);
+    console.log(`Status: ${response.status}`);
+    console.log("**")
+    console.log("**")
     console.log("**")
    
-
-
     if (!response.ok) {
       const contentType = response.headers.get('content-type');
       const jsonContentType = 'application/json; charset=utf-8';
