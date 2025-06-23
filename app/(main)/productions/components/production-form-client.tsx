@@ -1,6 +1,8 @@
+// app/(main)/productions/components/production-form-client.tsx
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createProductionAction } from "@/actions/productions";
-import { getAllOrdersAction } from "@/actions/orders";
+import { getAllOrdersAction, getOrdersByBranchAction } from "@/actions/orders";
 import { getInventoryByBranchAction } from "@/actions/inventory";
-import { getBranchesAction } from "@/actions/branches";
 import { Loader2 } from "lucide-react";
 import { 
   Select, 
@@ -33,6 +34,7 @@ export function ProductionFormClient({
   selectedOrderId,
   selectedInventoryId
 }: ProductionFormProps) {
+  const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const { toast } = useToast();
@@ -41,7 +43,6 @@ export function ProductionFormClient({
   // State for related data
   const [orders, setOrders] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
-  const [selectedBranch, setSelectedBranch] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -54,24 +55,42 @@ export function ProductionFormClient({
   // Load required data
   useEffect(() => {
     const loadData = async () => {
+      if (!session?.user?.branchId) {
+        toast({
+          title: "Error",
+          description: "You are not assigned to a branch. Please contact your administrator.",
+          variant: "destructive",
+        });
+        setDataLoading(false);
+        return;
+      }
+
       setDataLoading(true);
       try {
-        // Load orders first
-        const ordersRes = await getAllOrdersAction({ pageSize: 100 });
-        if (ordersRes.success) {
-          setOrders(ordersRes.data.content);
+        // Load inventory for user's branch from session
+        const inventoryRes = await getInventoryByBranchAction(session.user.branchId);
+        if (inventoryRes.success) {
+          setInventoryItems(inventoryRes.data.content);
+        } else {
+          toast({
+            title: "Error loading inventory",
+            description: inventoryRes.error || "Failed to load inventory items",
+            variant: "destructive",
+          });
         }
 
-        // If we have a selected order, get its branch and load inventory
-        if (selectedOrderId && ordersRes.success) {
-          const selectedOrder = ordersRes.data.content.find(o => o.id === selectedOrderId);
-          if (selectedOrder && selectedOrder.branchId) {
-            setSelectedBranch(selectedOrder.branchId);
-            const inventoryRes = await getInventoryByBranchAction(selectedOrder.branchId);
-            if (inventoryRes.success) {
-              setInventoryItems(inventoryRes.data.content);
-            }
-          }
+        // Load orders (optionally filter by user's branch)
+        const ordersRes = await getOrdersByBranchAction(session.user.branchId);
+        if (ordersRes.success) {
+          // Filter orders to only show orders for the user's branch
+          const userBranchOrders = ordersRes.data.content
+          setOrders(userBranchOrders);
+        } else {
+          toast({
+            title: "Error loading orders",
+            description: ordersRes.error || "Failed to load orders",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error("Error loading form data:", error);
@@ -85,32 +104,14 @@ export function ProductionFormClient({
       }
     };
 
-    loadData();
-  }, [selectedOrderId, toast]);
-
-  // Handle order change - load inventory for the selected order's branch
-  const handleOrderChange = async (orderId: string) => {
-    setFormData(prev => ({ ...prev, orderId, inventoryId: "" }));
-    
-    const selectedOrder = orders.find(o => o.id === parseInt(orderId));
-    if (selectedOrder && selectedOrder.branchId) {
-      setSelectedBranch(selectedOrder.branchId);
-      try {
-        const inventoryRes = await getInventoryByBranchAction(selectedOrder.branchId);
-        if (inventoryRes.success) {
-          setInventoryItems(inventoryRes.data.content);
-        }
-      } catch (error) {
-        console.error("Error loading inventory:", error);
-        toast({
-          title: "Error",
-          description: "Could not load inventory for this order.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      setInventoryItems([]);
+    if (session) {
+      loadData();
     }
+  }, [session, selectedOrderId, toast]);
+
+  // Handle order change
+  const handleOrderChange = (orderId: string) => {
+    setFormData(prev => ({ ...prev, orderId, inventoryId: "" }));
   };
 
   // Handle form input changes
@@ -137,7 +138,6 @@ export function ProductionFormClient({
       submitFormData.append('quantity', formData.quantity);
       submitFormData.append('remarks', formData.remarks);
       
-      // Submit to the server action
       const response = await createProductionAction(
         submitFormData, 
         parseInt(formData.orderId), 
@@ -173,6 +173,28 @@ export function ProductionFormClient({
     }
   };
 
+  // Show loading if session is not loaded yet
+  if (!session) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Loading session...</span>
+      </div>
+    );
+  }
+
+  // Show error if user has no branch
+  if (!session?.user?.branchId) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">You are not assigned to a branch. Please contact your administrator.</p>
+        <Button variant="outline" onClick={() => router.push(returnUrl)} className="mt-4">
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
   if (dataLoading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -199,11 +221,17 @@ export function ProductionFormClient({
               <SelectValue placeholder="Select an order" />
             </SelectTrigger>
             <SelectContent>
-              {orders.map((order) => (
-                <SelectItem key={order.id} value={String(order.id)}>
-                  {order.orderNumber} - {order.customerName}
-                </SelectItem>
-              ))}
+              {orders.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  No orders available for your branch
+                </div>
+              ) : (
+                orders.map((order) => (
+                  <SelectItem key={order.id} value={String(order.id)}>
+                    {order.orderNumber} - {order.customerName}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -217,21 +245,22 @@ export function ProductionFormClient({
             value={formData.inventoryId}
             onValueChange={(value) => handleSelectChange('inventoryId', value)}
             required
-            disabled={!formData.orderId}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder={
-                !formData.orderId 
-                  ? "Select an order first" 
-                  : "Select inventory item"
-              } />
+              <SelectValue placeholder="Select inventory item" />
             </SelectTrigger>
             <SelectContent>
-              {inventoryItems.map((item) => (
-                <SelectItem key={item.id} value={String(item.id)}>
-                  {item.productName} - Batch: {item.batchNumber} (Qty: {item.quantity})
-                </SelectItem>
-              ))}
+              {inventoryItems.length === 0 ? (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  No inventory available for your branch
+                </div>
+              ) : (
+                inventoryItems.map((item) => (
+                  <SelectItem key={item.id} value={String(item.id)}>
+                    {item.productName} - Batch: {item.batchNumber} (Qty: {item.quantity})
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -270,7 +299,7 @@ export function ProductionFormClient({
         <Button type="button" variant="outline" onClick={() => router.push(returnUrl)}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || orders.length === 0 || inventoryItems.length === 0}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,6 +1,8 @@
+// app/(main)/productions/components/quick-create-button.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ import {
 } from "@/components/ui/select";
 
 export function QuickCreateButton() {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
@@ -41,12 +44,34 @@ export function QuickCreateButton() {
 
   // Load required data when modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && session?.user?.branchId) {
       const loadData = async () => {
         setDataLoading(true);
         try {
-          const ordersRes = await getAllOrdersAction({ pageSize: 100 });
-          if (ordersRes.success) setOrders(ordersRes.data.content);
+          // Load inventory for user's branch from session
+          const inventoryRes = await getInventoryByBranchAction(session.user.branchId);
+          if (inventoryRes.success) {
+            setInventoryItems(inventoryRes.data.content);
+          } else {
+            toast({
+              title: "Error loading inventory",
+              description: inventoryRes.error || "Failed to load inventory items",
+              variant: "destructive",
+            });
+          }
+
+          // Load orders and filter by user's branch
+          const ordersRes = await getOrdersByBranchAction(session.user.branchId);
+          if (ordersRes.success) {
+            const userBranchOrders = ordersRes.data.content
+            setOrders(userBranchOrders);
+          } else {
+            toast({
+              title: "Error loading orders",
+              description: ordersRes.error || "Failed to load orders",
+              variant: "destructive",
+            });
+          }
         } catch (error) {
           console.error("Error loading form data:", error);
           toast({
@@ -61,30 +86,11 @@ export function QuickCreateButton() {
 
       loadData();
     }
-  }, [isOpen, toast]);
+  }, [isOpen, session, toast]);
 
-  // Handle order change - load inventory for the selected order's branch
-  const handleOrderChange = async (orderId: string) => {
+  // Handle order change
+  const handleOrderChange = (orderId: string) => {
     setFormData(prev => ({ ...prev, orderId, inventoryId: "" }));
-    
-    const selectedOrder = orders.find(o => o.id === parseInt(orderId));
-    if (selectedOrder && selectedOrder.branchId) {
-      try {
-        const inventoryRes = await getInventoryByBranchAction(selectedOrder.branchId);
-        if (inventoryRes.success) {
-          setInventoryItems(inventoryRes.data.content);
-        }
-      } catch (error) {
-        console.error("Error loading inventory:", error);
-        toast({
-          title: "Error",
-          description: "Could not load inventory for this order.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      setInventoryItems([]);
-    }
   };
 
   // Handle form input changes
@@ -108,12 +114,10 @@ export function QuickCreateButton() {
     setIsLoading(true);
 
     try {
-      // Convert form data to FormData for the action
       const submitData = new FormData();
       submitData.append('quantity', formData.quantity);
       submitData.append('remarks', formData.remarks);
 
-      // Submit to the server action
       const response = await createProductionAction(
         submitData, 
         parseInt(formData.orderId), 
@@ -121,14 +125,12 @@ export function QuickCreateButton() {
       );
 
       if (response.success) {
-        // Show success toast
         toast({
           title: "Production Record Created",
           description: `Production record was created successfully.`,
           variant: "default",
         });
         
-        // Close modal and reset form
         setIsOpen(false);
         setFormData({
           orderId: '',
@@ -137,11 +139,11 @@ export function QuickCreateButton() {
           remarks: ''
         });
         setInventoryItems([]);
+        setOrders([]);
         
-        // Force a complete page refresh rather than just a router refresh
+        // Force a complete page refresh
         window.location.href = window.location.pathname;
       } else {
-        // Show error toast
         toast({
           title: "Error creating production record",
           description: response.error || "There was a problem creating the production record. Please try again.",
@@ -159,6 +161,11 @@ export function QuickCreateButton() {
       setIsLoading(false);
     }
   };
+
+  // Don't show button if user has no branch
+  if (!session?.user?.branchId) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -192,11 +199,17 @@ export function QuickCreateButton() {
                       <SelectValue placeholder="Select order" />
                     </SelectTrigger>
                     <SelectContent>
-                      {orders.map((order) => (
-                        <SelectItem key={order.id} value={String(order.id)}>
-                          {order.orderNumber} - {order.customerName}
-                        </SelectItem>
-                      ))}
+                      {orders.length === 0 ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          No orders available for your branch
+                        </div>
+                      ) : (
+                        orders.map((order) => (
+                          <SelectItem key={order.id} value={String(order.id)}>
+                            {order.orderNumber} - {order.customerName}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -207,21 +220,23 @@ export function QuickCreateButton() {
                     name="inventoryId"
                     value={formData.inventoryId}
                     onValueChange={(value) => handleSelectChange('inventoryId', value)}
-                    disabled={isLoading || !formData.orderId}
+                    disabled={isLoading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={
-                        !formData.orderId 
-                          ? "Select order first" 
-                          : "Select inventory"
-                      } />
+                      <SelectValue placeholder="Select inventory" />
                     </SelectTrigger>
                     <SelectContent>
-                      {inventoryItems.map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.productName} - Batch: {item.batchNumber}
-                        </SelectItem>
-                      ))}
+                      {inventoryItems.length === 0 ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          No inventory available for your branch
+                        </div>
+                      ) : (
+                        inventoryItems.map((item) => (
+                          <SelectItem key={item.id} value={String(item.id)}>
+                            {item.productName} - Batch: {item.batchNumber}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -269,7 +284,7 @@ export function QuickCreateButton() {
               </Button>
               <Button 
                 type="submit"
-                disabled={isLoading || !formData.orderId || !formData.inventoryId || !formData.quantity}
+                disabled={isLoading || !formData.orderId || !formData.inventoryId || !formData.quantity || orders.length === 0 || inventoryItems.length === 0}
               >
                 {isLoading ? (
                   <>
