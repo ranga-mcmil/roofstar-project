@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Eye, FileText, Printer, Trash2, CheckCircle, XCircle } from "lucide-react"
+import { MoreHorizontal, Edit, Eye, FileText, Printer, Trash2, CheckCircle, XCircle, History, Package } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -161,6 +161,17 @@ export function BranchesTable({
                         <DropdownMenuItem asChild>
                           <Link href={`/branches/${branch.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" /> Edit
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href={`/inventory/branches/${branch.id}/history`}>
+                            <History className="mr-2 h-4 w-4" /> Inventory History
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/products?branchId=${branch.id}`}>
+                            <Package className="mr-2 h-4 w-4" /> View Products
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />

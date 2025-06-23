@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Download, Edit, Printer, CheckCircle, XCircle, Users, MapPin, Building2 } from "lucide-react"
+import { ArrowLeft, Download, Edit, Printer, CheckCircle, XCircle, Users, MapPin, Building2, Package, History, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getBranchAction } from "@/actions/branches"
@@ -213,14 +213,14 @@ export default async function BranchDetailsPage({ params, searchParams }: Branch
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center">
-                <Building2 className="w-4 h-4 mr-2" />
-                Branch Statistics
+                <Package className="w-4 h-4 mr-2" />
+                Inventory Overview
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Products:</span>
+                  <span className="text-sm text-muted-foreground">Total Products:</span>
                   <span className="text-sm font-medium">0</span>
                 </div>
                 <div className="flex justify-between">
@@ -228,13 +228,20 @@ export default async function BranchDetailsPage({ params, searchParams }: Branch
                   <span className="text-sm font-medium">0</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Orders:</span>
+                  <span className="text-sm text-muted-foreground">Active Batches:</span>
                   <span className="text-sm font-medium">0</span>
                 </div>
-                <div className="pt-2">
+                <div className="pt-2 flex gap-2">
+                  <Button variant="outline" asChild size="sm">
+                    <Link href={`/inventory/branches/${id}/history`}>
+                      <History className="mr-2 h-4 w-4" />
+                      View History
+                    </Link>
+                  </Button>
                   <Button variant="outline" asChild size="sm">
                     <Link href={`/products?branchId=${id}`}>
-                      View Products
+                      <Package className="mr-2 h-4 w-4" />
+                      Products
                     </Link>
                   </Button>
                 </div>
@@ -245,16 +252,36 @@ export default async function BranchDetailsPage({ params, searchParams }: Branch
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Quick Actions
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-muted-foreground mb-4">No recent activity found for this branch.</div>
-            <div className="flex gap-2">
-              <Button variant="outline" asChild>
-                <Link href={`/inventory/add?branchId=${id}`}>Add Inventory</Link>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <Button variant="outline" asChild className="h-auto p-4 flex flex-col items-center gap-2">
+                <Link href={`/inventory/branches/${id}/history`}>
+                  <History className="h-5 w-5" />
+                  <span className="text-sm">Inventory History</span>
+                </Link>
               </Button>
-              <Button variant="outline" asChild>
-                <Link href={`/orders/new?branchId=${id}`}>Create Order</Link>
+              <Button variant="outline" asChild className="h-auto p-4 flex flex-col items-center gap-2">
+                <Link href={`/products?branchId=${id}`}>
+                  <Package className="h-5 w-5" />
+                  <span className="text-sm">Branch Products</span>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="h-auto p-4 flex flex-col items-center gap-2">
+                <Link href={`/orders/new?branchId=${id}`}>
+                  <Building2 className="h-5 w-5" />
+                  <span className="text-sm">Create Order</span>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="h-auto p-4 flex flex-col items-center gap-2">
+                <Link href={`/users?branchId=${id}`}>
+                  <Users className="h-5 w-5" />
+                  <span className="text-sm">Manage Users</span>
+                </Link>
               </Button>
             </div>
           </CardContent>
