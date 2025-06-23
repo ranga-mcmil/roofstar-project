@@ -49,7 +49,7 @@ export function QuickCreateButton() {
         setDataLoading(true);
         try {
           // Load inventory for user's branch from session
-          const inventoryRes = await getInventoryByBranchAction(session.user.branchId);
+          const inventoryRes = await getInventoryByBranchAction(session.user.branchId!);
           if (inventoryRes.success) {
             setInventoryItems(inventoryRes.data.content);
           } else {

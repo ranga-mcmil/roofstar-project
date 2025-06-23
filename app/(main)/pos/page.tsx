@@ -43,9 +43,9 @@ import { ProductCategoryDTO } from "@/lib/http-service/categories/types"
 import { OrderType, PaymentMethod } from "@/lib/http-service/orders/types"
 import { USER_ROLES } from "@/lib/types"
 
-// Enhanced cart item type
+// Enhanced cart item type - Updated to match API schema
 interface CartItem {
-  id: number
+  productId: number  // Changed from 'id' to 'productId' to match API
   name: string
   price: number
   quantity: number
@@ -329,16 +329,6 @@ export default function POSPage() {
   const userBranch = session?.user?.branchId
   const isAdmin = userRole === USER_ROLES.ADMIN
 
-  // Debug session data
-  console.log('Session debug:', {
-    sessionStatus: status,
-    sessionUser: session?.user,
-    userRole,
-    userBranch,
-    isAdmin,
-    USER_ROLES
-  })
-
   // Load initial data
   useEffect(() => {
     // Don't load data until session is ready
@@ -353,15 +343,6 @@ export default function POSPage() {
           getCustomersAction({ pageNo: 0, pageSize: 100 }),
           getCategoriesAction()
         ])
-
-        console.log('API Results:', {
-          productsSuccess: productsRes.success,
-          productsCount: productsRes.success ? productsRes.data.content.length : 0,
-          customersSuccess: customersRes.success,
-          customersCount: customersRes.success ? customersRes.data.content.length : 0,
-          categoriesSuccess: categoriesRes.success,
-          categoriesCount: categoriesRes.success ? categoriesRes.data.length : 0
-        })
 
         // Always set data, even if some calls fail
         if (productsRes.success) {
@@ -447,21 +428,21 @@ export default function POSPage() {
     )
   }
 
-  // Cart operations
+  // Cart operations - Updated to use productId
   const addToCart = (product: ProductDTO) => {
-    const existingItem = cartItems.find(item => item.id === product.id)
+    const existingItem = cartItems.find(item => item.productId === product.id)
     
     if (existingItem) {
       setCartItems(items => 
         items.map(item => 
-          item.id === product.id 
+          item.productId === product.id 
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
       )
     } else {
       const newItem: CartItem = {
-        id: product.id,
+        productId: product.id,
         name: product.name,
         price: product.price,
         quantity: 1,
@@ -479,34 +460,35 @@ export default function POSPage() {
     })
   }
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  // Updated all cart operations to use productId
+  const updateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity < 1) return
     setCartItems(items => 
       items.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
+        item.productId === productId ? { ...item, quantity: newQuantity } : item
       )
     )
   }
 
-  const updateDimensions = (id: number, length: number, width: number) => {
+  const updateDimensions = (productId: number, length: number, width: number) => {
     setCartItems(items => 
       items.map(item => 
-        item.id === id ? { ...item, length, width } : item
+        item.productId === productId ? { ...item, length, width } : item
       )
     )
   }
 
-  const updateDiscount = (id: number, discount: number) => {
+  const updateDiscount = (productId: number, discount: number) => {
     if (discount < 0 || discount > 100) return
     setCartItems(items => 
       items.map(item => 
-        item.id === id ? { ...item, discount } : item
+        item.productId === productId ? { ...item, discount } : item
       )
     )
   }
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id))
+  const removeItem = (productId: number) => {
+    setCartItems(items => items.filter(item => item.productId !== productId))
   }
 
   const clearCart = () => {
@@ -540,7 +522,7 @@ export default function POSPage() {
     setShowCustomerForm(false)
   }
 
-  // Button disabled state logic with better debugging
+  // Button disabled state logic
   const getButtonDisabledState = () => {
     if (isLoading) return { disabled: true, reason: 'Creating order...' }
     if (cartItems.length === 0) return { disabled: true, reason: 'Add items to cart' }
@@ -580,7 +562,7 @@ export default function POSPage() {
 
   const buttonState = getButtonDisabledState()
 
-  // Handle order submission
+  // Handle order submission with correct order item structure
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -605,17 +587,14 @@ export default function POSPage() {
     setIsLoading(true)
 
     try {
-      // Prepare order items
+      // Prepare order items with correct structure matching API schema
       const orderItems = cartItems.map(item => ({
-        productId: item.id,
+        productId: item.productId,
         quantity: item.quantity,
         length: item.length,
         width: item.width,
-        unitPrice: item.price,
         discount: item.discount,
-        notes: item.notes || "",
-        area: item.length * item.width,
-        lineTotalBeforeDiscount: item.price * item.quantity * item.length * item.width
+        notes: item.notes || ""
       }))
 
       const customerId = parseInt(selectedCustomer)
@@ -790,7 +769,7 @@ export default function POSPage() {
                   ) : (
                     <div className="space-y-4">
                       {cartItems.map((item) => (
-                        <div key={item.id} className="border-b pb-4 last:border-b-0 last:pb-0">
+                        <div key={item.productId} className="border-b pb-4 last:border-b-0 last:pb-0">
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-sm">{item.name}</h4>
@@ -802,7 +781,7 @@ export default function POSPage() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(item.productId)}
                               type="button"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -815,7 +794,7 @@ export default function POSPage() {
                               <Input
                                 type="number"
                                 value={item.quantity}
-                                onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
+                                onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
                                 className="h-8 text-center"
                                 min="1"
                               />
@@ -826,7 +805,7 @@ export default function POSPage() {
                                 type="number"
                                 step="0.1"
                                 value={item.length}
-                                onChange={(e) => updateDimensions(item.id, parseFloat(e.target.value) || 1, item.width)}
+                                onChange={(e) => updateDimensions(item.productId, parseFloat(e.target.value) || 1, item.width)}
                                 className="h-8 text-center"
                                 min="0.1"
                               />
@@ -837,7 +816,7 @@ export default function POSPage() {
                                 type="number"
                                 step="0.1"
                                 value={item.width}
-                                onChange={(e) => updateDimensions(item.id, item.length, parseFloat(e.target.value) || 1)}
+                                onChange={(e) => updateDimensions(item.productId, item.length, parseFloat(e.target.value) || 1)}
                                 className="h-8 text-center"
                                 min="0.1"
                               />
@@ -850,7 +829,7 @@ export default function POSPage() {
                               type="number"
                               step="0.1"
                               value={item.discount}
-                              onChange={(e) => updateDiscount(item.id, parseFloat(e.target.value) || 0)}
+                              onChange={(e) => updateDiscount(item.productId, parseFloat(e.target.value) || 0)}
                               className="h-8 text-center"
                               min="0"
                               max="100"
@@ -1043,9 +1022,6 @@ export default function POSPage() {
                   {buttonState.reason}
                 </p>
               )}
-
-              {/* Debug info in development */}
-              
             </div>
           </form>
         </div>
@@ -1069,4 +1045,3 @@ export default function POSPage() {
     </div>
   )
 }
-                            

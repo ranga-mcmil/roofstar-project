@@ -149,6 +149,11 @@ export default function OrdersPage() {
     )
   }
 
+  // Helper function to safely get order items count
+  const getOrderItemsCount = (order: OrderResponseDTO): number => {
+    return order.orderItems?.length || 0
+  }
+
   // Export orders data as CSV
   const exportOrdersCSV = () => {
     setIsExporting(true)
@@ -167,7 +172,7 @@ export default function OrdersPage() {
         order.branchName,
         order.orderType.replace('_', ' '),
         order.status.replace('_', ' '),
-        order.orderItems.length,
+        getOrderItemsCount(order),
         order.totalAmount.toFixed(2),
         order.paidAmount.toFixed(2),
         order.balanceAmount.toFixed(2)
@@ -469,7 +474,7 @@ export default function OrdersPage() {
                           <TableCell>{order.branchName}</TableCell>
                           <TableCell>{getTypeBadge(order.orderType)}</TableCell>
                           <TableCell>{getStatusBadge(order.status)}</TableCell>
-                          <TableCell>{order.orderItems.length} items</TableCell>
+                          <TableCell>{getOrderItemsCount(order)} items</TableCell>
                           <TableCell className="text-right font-medium">
                             {formatCurrency(order.totalAmount)}
                           </TableCell>
