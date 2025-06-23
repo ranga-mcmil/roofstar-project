@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { getBatchAction } from "@/actions/batches"
-import { getBranchesAction } from "@/actions/branches"
 import { GetBatchResponse } from "@/lib/http-service/batches/types"
 import { BatchFormClient } from "../../components/batch-form-client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth/next-auth-options"
 
 interface EditBatchPageProps {
   params: {
@@ -17,14 +18,23 @@ interface EditBatchPageProps {
 export default async function EditBatchPage({ params }: EditBatchPageProps) {
   const id = parseInt(params.id);
 
-  // Fetch batch and related data in parallel
-  const [
-    batchResponse, 
-    branchesResponse
-  ] = await Promise.all([
-    getBatchAction(id),
-    getBranchesAction()
-  ]);
+  // Get user session to extract branchId
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect('/login');
+  }
+
+  // For managers, get their assigned branchId
+  const userBranchId = session.user.branchId;
+  
+  if (!userBranchId) {
+    // If user doesn't have a branchId (shouldn't happen for managers), redirect
+    redirect('/batches');
+  }
+
+  // Fetch batch data
+  const batchResponse = await getBatchAction(id);
   
   // Check for success and extract batch data
   let batch = undefined;
@@ -36,9 +46,6 @@ export default async function EditBatchPage({ params }: EditBatchPageProps) {
   if (!batch) {
     notFound();
   }
-
-  // Get related data for the form
-  const branches = branchesResponse.success ? branchesResponse.data.content : [];
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -59,9 +66,9 @@ export default async function EditBatchPage({ params }: EditBatchPageProps) {
         <Card className="p-6">
           <BatchFormClient 
             batch={batch} 
-            branches={branches}
             returnUrl={`/batches/${id}`} 
             isEditing={true}
+            userBranchId={userBranchId}
           />
         </Card>
       </main>

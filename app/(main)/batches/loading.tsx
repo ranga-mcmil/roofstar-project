@@ -1,7 +1,7 @@
 import { Plus, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Package, Building2, Calendar } from "lucide-react"
+import { FileText, Package, Calendar } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -25,8 +25,8 @@ export default function Loading() {
           </div>
         </div>
 
-        {/* Stats cards with skeletons */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Stats cards with skeletons - Only 3 cards now */}
+        <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
@@ -47,16 +47,6 @@ export default function Loading() {
             <CardContent>
               <Skeleton className="h-8 w-16 rounded" />
               <p className="text-xs text-muted-foreground mt-1">Currently in production</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Branches</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16 rounded" />
-              <p className="text-xs text-muted-foreground mt-1">Production locations</p>
             </CardContent>
           </Card>
           <Card>
@@ -131,3 +121,4 @@ export default function Loading() {
     </div>
   )
 }
+              

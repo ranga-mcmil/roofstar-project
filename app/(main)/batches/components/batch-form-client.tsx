@@ -9,30 +9,20 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createBatchAction, updateBatchAction } from "@/actions/batches";
 import { BatchDTO } from "@/lib/http-service/batches/types";
-import { BranchDTO } from "@/lib/http-service/branches/types";
 import { Loader2 } from "lucide-react";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 
 interface BatchFormProps {
   batch?: BatchDTO;
-  branches: BranchDTO[];
   returnUrl: string;
   isEditing: boolean;
-  selectedBranchId?: string;
+  userBranchId: string; // Manager's branch ID from session
 }
 
 export function BatchFormClient({ 
   batch, 
-  branches, 
   returnUrl, 
-  isEditing, 
-  selectedBranchId 
+  isEditing,
+  userBranchId
 }: BatchFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -48,7 +38,7 @@ export function BatchFormClient({
       // Submit to the server action
       const response = isEditing 
         ? await updateBatchAction(formData, batch!.id)
-        : await createBatchAction(formData, formData.get('branchId') as string);
+        : await createBatchAction(formData, userBranchId); // Use user's branch ID
 
       if (response.success) {
         toast({
@@ -84,7 +74,7 @@ export function BatchFormClient({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <Label htmlFor="batchNumber">
             Batch Number <span className="text-red-500">*</span>
@@ -97,30 +87,6 @@ export function BatchFormClient({
             required
           />
         </div>
-        
-        {!isEditing && (
-          <div className="space-y-2">
-            <Label htmlFor="branchId">
-              Branch <span className="text-red-500">*</span>
-            </Label>
-            <Select 
-              name="branchId"
-              defaultValue={selectedBranchId || ""}
-              required
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
 
       <div className="space-y-2">

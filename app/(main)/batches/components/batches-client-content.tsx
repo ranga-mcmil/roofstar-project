@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Package, Building2, Calendar } from "lucide-react";
+import { FileText, Package, Calendar } from "lucide-react";
 import { BatchesTable } from "./batches-table";
 import { BatchesFilters } from "./batches-filters";
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { getBatchesAction } from "@/actions/batches";
-import { getBranchesAction } from "@/actions/branches";
 import { BatchDTO } from "@/lib/http-service/batches/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -29,11 +28,9 @@ export default function BatchesClientContent({
   const [batches, setBatches] = useState<BatchDTO[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [branches, setBranches] = useState([]);
   const [stats, setStats] = useState({
     totalBatches: 0,
     activeBatches: 0,
-    branchCount: 0,
     thisMonth: 0
   });
   const [loading, setLoading] = useState(true);
@@ -45,19 +42,18 @@ export default function BatchesClientContent({
     setLoading(true); // Show loading state immediately
   };
 
-  // Parse search parameters
+  // Parse search parameters (removed branchId since managers don't filter by branch)
   const getParams = () => {
     const search = searchParams?.get('search') || "";
-    const branchId = searchParams?.get('branchId') || "all";
     const page = Number.parseInt(searchParams?.get('page') || "1", 10);
     const pageSize = Number.parseInt(searchParams?.get('pageSize') || "10", 10);
     const sortBy = searchParams?.get('sortBy') || "id";
     const sortDir = (searchParams?.get('sortDir') || "desc") as "asc" | "desc";
     
-    return { search, branchId, page, pageSize, sortBy, sortDir };
+    return { search, page, pageSize, sortBy, sortDir };
   };
 
-  const { search, branchId, page, pageSize, sortBy, sortDir } = getParams();
+  const { search, page, pageSize, sortBy, sortDir } = getParams();
 
   // Load data
   useEffect(() => {
@@ -67,17 +63,14 @@ export default function BatchesClientContent({
       setLoading(true);
       
       try {
-        // Load batches and branches in parallel
-        const [batchesResponse, branchesResponse] = await Promise.all([
-          getBatchesAction({
-            pageNo: page - 1, // API is 0-indexed
-            pageSize,
-            sortBy,
-            sortDir,
-            branchId: branchId !== 'all' ? branchId : undefined
-          }),
-          getBranchesAction()
-        ]);
+        // Only load batches (no need to fetch branches for managers)
+        const batchesResponse = await getBatchesAction({
+          pageNo: page - 1, // API is 0-indexed
+          pageSize,
+          sortBy,
+          sortDir
+          // No branchId filter - managers only see their branch's batches by default
+        });
         
         // Only proceed if component is still mounted
         if (!isActive) return;
@@ -88,7 +81,7 @@ export default function BatchesClientContent({
           setTotalItems(batchesResponse.data.totalElements);
           setTotalPages(batchesResponse.data.totalPages);
           
-          // Calculate stats (simplified since batches don't have active/inactive status like products)
+          // Calculate stats
           const currentMonth = new Date().getMonth();
           const currentYear = new Date().getFullYear();
           const thisMonthBatches = batchesResponse.data.content.filter(batch => {
@@ -100,7 +93,6 @@ export default function BatchesClientContent({
           setStats({
             totalBatches: batchesResponse.data.totalElements,
             activeBatches: batchesResponse.data.content.length, // All batches shown are considered active
-            branchCount: 0, // Will update after branches fetched
             thisMonth: thisMonthBatches
           });
         } else {
@@ -109,23 +101,9 @@ export default function BatchesClientContent({
           setTotalPages(1);
         }
         
-        // Process branches response
-        if (branchesResponse.success && branchesResponse.data) {
-          setBranches(branchesResponse.data.content as any);
-          
-          // Update branch count in stats
-          setStats(prev => ({
-            ...prev,
-            branchCount: branchesResponse.data!.content.length
-          }));
-        }
-        
         // Check for any errors and show a toast
-        if (!batchesResponse.success || !branchesResponse.success) {
-          const errorMessage = 
-            !batchesResponse.success 
-              ? batchesResponse.error || "Failed to load batches" 
-              : branchesResponse.error || "Failed to load branches";
+        if (!batchesResponse.success) {
+          const errorMessage = batchesResponse.error || "Failed to load batches";
           
           // Show error toast
           const { dismiss } = toast({
@@ -140,7 +118,7 @@ export default function BatchesClientContent({
                   handleRetry();
                   dismiss(); // Close the toast when retry is clicked
                 }}
-                className="bg-white text-primary border-0" // White background, blue text, no border
+                className="bg-white text-primary border-0"
               >
                 Try Again
               </Button>
@@ -173,7 +151,7 @@ export default function BatchesClientContent({
                 handleRetry();
                 dismiss(); // Close the toast when retry is clicked
               }}
-              className="bg-white text-primary border-0" // White background, blue text, no border
+              className="bg-white text-primary border-0"
             >
               Try Again
             </Button>
@@ -203,7 +181,7 @@ export default function BatchesClientContent({
   return (
     <>
       <BatchesToastHandler />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
@@ -232,18 +210,6 @@ export default function BatchesClientContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Branches</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-16 rounded" /> : stats.branchCount}
-            </div>
-            <p className="text-xs text-muted-foreground">Production locations</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">This Month</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -259,8 +225,6 @@ export default function BatchesClientContent({
       <div className="border rounded-lg p-2">
         <BatchesFilters 
           currentSearch={search} 
-          currentBranch={branchId} 
-          branches={branches} 
           isLoading={loading} 
         />
 
@@ -278,7 +242,7 @@ export default function BatchesClientContent({
             Array.from(searchParams.entries()).map(([key, value]) => [key, value])
           )}
           isLoading={loading}
-          onRefresh={handleRetry} // Add refresh callback for handling updates
+          onRefresh={handleRetry}
         />
       </div>
     </>

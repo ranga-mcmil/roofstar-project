@@ -1,16 +1,11 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, Download, Building2 } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Plus, Download } from "lucide-react"
 import { QuickCreateButton } from "./components/quick-create-button"
 import BatchesClientContent from "./components/batches-client-content"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth/next-auth-options"
+import { redirect } from "next/navigation"
 
 interface BatchesPageProps {
   search?: string
@@ -25,6 +20,16 @@ export default async function BatchesPage(props: {
   searchParams?: BatchesPageProps;
 }) {
   const searchParams = props.searchParams || {};
+  
+  // Get user session to extract branchId
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect('/login');
+  }
+
+  // For managers, get their assigned branchId
+  const userBranchId = session.user.branchId;
   
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -42,41 +47,16 @@ export default async function BatchesPage(props: {
               </Button>
             </form>
             
-            {/* Branch Management Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Manage Branches
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Branch Management</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuItem asChild>
-                  <Link href="/branches">
-                    <Building2 className="mr-2 h-4 w-4 text-blue-600" />
-                    <div className="flex flex-col">
-                      <span>Branches</span>
-                      <span className="text-xs text-muted-foreground">Manage branch locations</span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuItem asChild>
-                  <Link href="/branches/new" className="text-blue-600 focus:text-blue-600">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Quick Add Branch
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
             {/* Quick Create Button - client component */}
-            <QuickCreateButton />
+            {userBranchId ? (
+              <QuickCreateButton userBranchId={userBranchId} />
+            ) : (
+              <Button asChild>
+                <Link href="/batches/new">
+                  <Plus className="mr-2 h-4 w-4" /> New Batch
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 
