@@ -1,4 +1,4 @@
-// app/(main)/users/components/users-table.tsx - Updated with new roles
+// app/(main)/users/components/users-table.tsx - Updated to use API response fields
 'use client';
 
 import { useTransition } from 'react';
@@ -60,13 +60,6 @@ export function UsersTable({
     }
   };
 
-  // Get branch name by ID
-  const getBranchName = (branchId: string | undefined) => {
-    if (!branchId) return 'Not Assigned';
-    const branch = branches.find(b => b.id === branchId);
-    return branch ? branch.name : 'Unknown Branch';
-  };
-
   // Get role badge - UPDATED TO USE NEW ROLES
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -81,6 +74,15 @@ export function UsersTable({
     }
   };
 
+  // Get status badge
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive ? (
+      <Badge className="bg-green-500">Active</Badge>
+    ) : (
+      <Badge className="bg-red-500">Inactive</Badge>
+    );
+  };
+
   // Generate skeleton rows for loading state
   const renderSkeletonRows = () => {
     return Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
@@ -89,6 +91,7 @@ export function UsersTable({
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
         <TableCell className="text-right">
           <Skeleton className="h-8 w-8 rounded-full ml-auto" />
         </TableCell>
@@ -106,6 +109,7 @@ export function UsersTable({
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Branch</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -115,7 +119,7 @@ export function UsersTable({
               renderSkeletonRows()
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No users found. Try adjusting your filters.
                 </TableCell>
               </TableRow>
@@ -125,7 +129,8 @@ export function UsersTable({
                   <TableCell className="font-medium">{user.firstName} {user.lastName}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>{getBranchName(user.branchId)}</TableCell>
+                  <TableCell>{user.branchName || 'Not Assigned'}</TableCell>
+                  <TableCell>{getStatusBadge(user.isActive)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -153,7 +158,8 @@ export function UsersTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/users/${user.id}/toggle-status`}>
-                            <Power className="mr-2 h-4 w-4" /> Toggle Status
+                            <Power className="mr-2 h-4 w-4" /> 
+                            {user.isActive ? 'Deactivate' : 'Activate'}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -198,4 +204,3 @@ export function UsersTable({
     </>
   );
 }
-                        

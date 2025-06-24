@@ -2,7 +2,7 @@
  * users/index.ts
  * 
  * This file contains the UserService class that implements API requests
- * to the user-controller endpoints.
+ * to the user-controller endpoints. Updated to match actual API spec.
  */
 
 import { apiClient, APIResponse } from "@/lib/http-service/apiClient";
@@ -172,12 +172,12 @@ export class UserService extends BaseAPIRequests {
   }
 
   /**
-   * Change password for a specific user
+   * Change password (uses auth controller endpoint)
    * 
-   * POST /api/users/{userId}/change-password
+   * POST /api/auth/change-password
    */
-  async changePassword(userId: string, payload: ChangePasswordPayload): Promise<APIResponse<Record<string, string>>> {
-    const url = `/api/users/${userId}/change-password`;
+  async changePassword(payload: ChangePasswordPayload): Promise<APIResponse<Record<string, string>>> {
+    const url = `/api/auth/change-password`;
 
     try {
       const session = await getServerSession(authOptions);

@@ -1,7 +1,7 @@
-// app/(main)/users/components/quick-create-button.tsx - Updated with new roles
+// app/(main)/users/components/quick-create-button.tsx - Updated to remove branch selection
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,15 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getBranchesAction } from "@/actions/branches";
-import { BranchDTO } from "@/lib/http-service/branches/types";
 import { USER_ROLES } from "@/lib/types";
 
 export function QuickCreateButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingBranches, setLoadingBranches] = useState(true);
-  const [branches, setBranches] = useState<BranchDTO[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -36,28 +32,7 @@ export function QuickCreateButton() {
     lastName: '',
     password: '',
     role: USER_ROLES.SALES_REP, // Updated to use new role constant
-    branchId: '',
   });
-
-  // Load branches for dropdown
-  useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const response = await getBranchesAction();
-        if (response.success && response.data) {
-          setBranches(response.data.content);
-        }
-      } catch (error) {
-        console.error("Failed to fetch branches:", error);
-      } finally {
-        setLoadingBranches(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchBranches();
-    }
-  }, [isOpen]);
 
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,9 +58,7 @@ export function QuickCreateButton() {
       submitData.append('lastName', formData.lastName);
       submitData.append('password', formData.password);
       submitData.append('role', formData.role);
-      if (formData.branchId && formData.branchId !== "_none") {
-        submitData.append('branchId', formData.branchId);
-      }
+      // Note: Branch assignment removed since API doesn't support it in user creation
 
       // Submit to the server action
       const response = await createUserAction(submitData);
@@ -106,7 +79,6 @@ export function QuickCreateButton() {
           lastName: '',
           password: '',
           role: USER_ROLES.SALES_REP, // Reset to default role
-          branchId: '',
         });
         
         // Refresh data without full page reload
@@ -203,45 +175,29 @@ export function QuickCreateButton() {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="role" className="font-medium">Role <span className="text-red-500">*</span></Label>
-                <Select 
-                  value={formData.role} 
-                  onValueChange={(value) => handleSelectChange('role', value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
-                    <SelectItem value={USER_ROLES.MANAGER}>Manager</SelectItem>
-                    <SelectItem value={USER_ROLES.SALES_REP}>Sales Rep</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="branchId" className="font-medium">Branch</Label>
-                <Select 
-                  value={formData.branchId} 
-                  onValueChange={(value) => handleSelectChange('branchId', value)}
-                  disabled={isLoading || loadingBranches}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select branch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">None</SelectItem>
-                    {branches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="role" className="font-medium">Role <span className="text-red-500">*</span></Label>
+              <Select 
+                value={formData.role} 
+                onValueChange={(value) => handleSelectChange('role', value)}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
+                  <SelectItem value={USER_ROLES.MANAGER}>Manager</SelectItem>
+                  <SelectItem value={USER_ROLES.SALES_REP}>Sales Rep</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Info note about branch assignment */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-xs text-blue-600">
+                <strong>Note:</strong> Branch assignments will be managed by system administrators after user creation.
+              </p>
             </div>
           </div>
           <DialogFooter>

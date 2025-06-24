@@ -25,9 +25,8 @@ export default async function ToggleUserStatusPage({ params }: ToggleUserStatusP
   }
   
   const user: GetUserResponse = userResponse.data;
-  // Note: Since the API doesn't have an 'active' field, we'll default to true
-  // You may need to adjust this logic based on your actual API response
-  const isActive = true; // Default assumption since API doesn't specify user status
+  // Use the actual isActive field from the API response
+  const isActive = user.isActive;
   
   // Create a form action that uses the existing toggleUserStatusAction
   async function handleToggleStatus() {
@@ -84,6 +83,8 @@ export default async function ToggleUserStatusPage({ params }: ToggleUserStatusP
                 <p><span className="font-medium">Name:</span> {user.firstName} {user.lastName}</p>
                 <p><span className="font-medium">Email:</span> {user.email}</p>
                 <p><span className="font-medium">Role:</span> {user.role}</p>
+                <p><span className="font-medium">Current Status:</span> {isActive ? "Active" : "Inactive"}</p>
+                <p><span className="font-medium">Branch:</span> {user.branchName || 'Not Assigned'}</p>
               </div>
             </div>
           </div>

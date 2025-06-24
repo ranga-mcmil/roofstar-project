@@ -1,7 +1,7 @@
-// app/(main)/users/components/user-form-client.tsx - Updated with new roles
+// app/(main)/users/components/user-form-client.tsx - Updated to remove branch selection
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,6 @@ import { useRouter } from "next/navigation";
 import { updateUserAction } from "@/actions/users";
 import { UserDTO } from "@/lib/http-service/users/types";
 import { Loader2 } from "lucide-react";
-import { getBranchesAction } from "@/actions/branches";
-import { BranchDTO } from "@/lib/http-service/branches/types";
 import { 
   Select,
   SelectContent,
@@ -28,28 +26,8 @@ interface UserFormProps {
 
 export function UserFormClient({ user, returnUrl }: UserFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingBranches, setLoadingBranches] = useState(true);
-  const [branches, setBranches] = useState<BranchDTO[]>([]);
   const { toast } = useToast();
   const router = useRouter();
-  
-  // Load branches for dropdown
-  useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const response = await getBranchesAction();
-        if (response.success && response.data) {
-          setBranches(response.data.content);
-        }
-      } catch (error) {
-        console.error("Failed to fetch branches:", error);
-      } finally {
-        setLoadingBranches(false);
-      }
-    };
-
-    fetchBranches();
-  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -150,23 +128,17 @@ export function UserFormClient({ user, returnUrl }: UserFormProps) {
         </Select>
       </div>
 
+      {/* Display current branch info as read-only since API doesn't support updating it */}
       <div className="space-y-2">
-        <Label htmlFor="branchId">
-          Branch
-        </Label>
-        <Select name="branchId" defaultValue={user?.branchId || "_none"}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select branch" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="_none">None</SelectItem>
-            {branches.map((branch) => (
-              <SelectItem key={branch.id} value={branch.id}>
-                {branch.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label>Current Branch Assignment</Label>
+        <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+          <p className="text-sm text-gray-700">
+            <span className="font-medium">Branch:</span> {user.branchName || 'Not Assigned'}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Branch assignments are managed by system administrators. Contact your admin to change branch assignments.
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-end space-x-4">

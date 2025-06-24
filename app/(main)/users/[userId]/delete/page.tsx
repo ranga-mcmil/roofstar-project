@@ -77,6 +77,8 @@ export default async function DeleteUserPage({ params }: DeleteUserPageProps) {
                 <p><span className="font-medium">Name:</span> {user.firstName} {user.lastName}</p>
                 <p><span className="font-medium">Email:</span> {user.email}</p>
                 <p><span className="font-medium">Role:</span> {user.role}</p>
+                <p><span className="font-medium">Status:</span> {user.isActive ? "Active" : "Inactive"}</p>
+                <p><span className="font-medium">Branch:</span> {user.branchName || 'Not Assigned'}</p>
               </div>
             </div>
           </div>

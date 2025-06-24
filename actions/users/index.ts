@@ -124,9 +124,8 @@ export async function getCurrentUserAction(): Promise<APIResponse<GetUserRespons
   return await userService.getCurrentUser();
 }
 
-export async function changePasswordAction(formData: FormData, userId: string): Promise<APIResponse<Record<string, string>, ChangePasswordPayload>> {
+export async function changePasswordAction(formData: FormData): Promise<APIResponse<Record<string, string>, ChangePasswordPayload>> {
   const rawData: ChangePasswordPayload = {
-    email: formData.get('email') as string,
     currentPassword: formData.get('currentPassword') as string,
     newPassword: formData.get('newPassword') as string,
   }
@@ -143,7 +142,7 @@ export async function changePasswordAction(formData: FormData, userId: string): 
     }
   }
 
-  const res = await userService.changePassword(userId, validatedData.data as ChangePasswordPayload);
+  const res = await userService.changePassword(validatedData.data as ChangePasswordPayload);
 
   if (res.success) {
     return {

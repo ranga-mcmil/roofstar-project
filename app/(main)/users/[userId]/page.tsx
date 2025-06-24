@@ -1,4 +1,4 @@
-// app/(main)/users/[userId]/page.tsx - Updated getRoleBadge function
+// app/(main)/users/[userId]/page.tsx - Updated to use API response fields
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,7 +7,6 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getUserAction } from "@/actions/users"
 import { GetUserResponse } from "@/lib/http-service/users/types"
-import { getBranchesAction } from "@/actions/branches"
 import { USER_ROLES } from "@/lib/types"
 
 interface UserDetailsPageProps {
@@ -24,11 +23,8 @@ interface UserDetailsPageProps {
 export default async function UserDetailsPage({ params, searchParams }: UserDetailsPageProps) {
   const { userId } = params;
   
-  // Fetch user data and branches in parallel
-  const [userResponse, branchesResponse] = await Promise.all([
-    getUserAction(userId),
-    getBranchesAction()
-  ]);
+  // Fetch user data
+  const userResponse = await getUserAction(userId);
   
   // Check for success and extract user data
   let user = undefined;
@@ -39,15 +35,6 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
   // If user not found, return 404
   if (!user) {
     notFound();
-  }
-  
-  // Find branch name if user has a branch
-  let branchName = 'Not Assigned';
-  if (user.branchId && branchesResponse.success) {
-    const branch = branchesResponse.data.content.find(b => b.id === user.branchId);
-    if (branch) {
-      branchName = branch.name;
-    }
   }
 
   // Get role badge - UPDATED TO USE NEW ROLES
@@ -64,6 +51,15 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
     }
   };
 
+  // Get status badge
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive ? (
+      <Badge className="bg-green-500">Active</Badge>
+    ) : (
+      <Badge className="bg-red-500">Inactive</Badge>
+    );
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -71,6 +67,19 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
         {searchParams.error && (
           <div className="p-3 bg-red-50 text-red-800 rounded-md">
             {decodeURIComponent(searchParams.error)}
+          </div>
+        )}
+
+        {/* Success messages */}
+        {searchParams.passwordChanged && (
+          <div className="p-3 bg-green-50 text-green-800 rounded-md">
+            Password has been successfully updated.
+          </div>
+        )}
+
+        {searchParams.statusUpdated && (
+          <div className="p-3 bg-blue-50 text-blue-800 rounded-md">
+            User status has been successfully updated.
           </div>
         )}
         
@@ -88,6 +97,8 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
                 <span>{user.email}</span>
                 <span>•</span>
                 {getRoleBadge(user.role)}
+                <span>•</span>
+                {getStatusBadge(user.isActive)}
               </div>
             </div>
           </div>
@@ -104,7 +115,8 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
             </Button>
             <Button variant="default" asChild>
               <Link href={`/users/${userId}/toggle-status`}>
-                <Power className="mr-2 h-4 w-4" /> Toggle Status
+                <Power className="mr-2 h-4 w-4" /> 
+                {user.isActive ? 'Deactivate' : 'Activate'}
               </Link>
             </Button>
           </div>
@@ -130,6 +142,10 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
                   <div>{getRoleBadge(user.role)}</div>
                 </div>
                 <div className="space-y-1">
+                  <div className="text-sm font-medium">Status</div>
+                  <div>{getStatusBadge(user.isActive)}</div>
+                </div>
+                <div className="space-y-1">
                   <div className="text-sm font-medium">User ID</div>
                   <div className="text-sm text-muted-foreground">{user.id}</div>
                 </div>
@@ -144,7 +160,7 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
               <div className="space-y-3">
                 <div className="space-y-1">
                   <div className="text-sm font-medium">Assigned Branch</div>
-                  <div>{branchName}</div>
+                  <div>{user.branchName || 'Not Assigned'}</div>
                 </div>
                 {user.branchId && (
                   <div className="mt-4">

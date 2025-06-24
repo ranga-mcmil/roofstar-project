@@ -41,9 +41,8 @@ export function ChangePasswordFormClient({ user, returnUrl }: ChangePasswordForm
         return;
       }
       
-      // Submit to the server action
-      formData.append('email', user.email); // Add email to the form data
-      const response = await changePasswordAction(formData, user.id);
+      // Submit to the server action (updated to remove userId parameter since it uses auth endpoint)
+      const response = await changePasswordAction(formData);
 
       if (response.success) {
         toast({
@@ -76,61 +75,73 @@ export function ChangePasswordFormClient({ user, returnUrl }: ChangePasswordForm
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="currentPassword">
-          Current Password <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="currentPassword"
-          name="currentPassword"
-          type="password"
-          placeholder="Enter current password"
-          required
-        />
+    <div className="space-y-6">
+      {/* Display user info */}
+      <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+        <p className="text-sm text-blue-800">
+          <span className="font-medium">Changing password for:</span> {user.firstName} {user.lastName} ({user.email})
+        </p>
+        <p className="text-xs text-blue-600 mt-1">
+          Branch: {user.branchName || 'Not Assigned'} • Status: {user.isActive ? 'Active' : 'Inactive'}
+        </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="newPassword">
-          New Password <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="newPassword"
-          name="newPassword"
-          type="password"
-          placeholder="Enter new password"
-          required
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">
-          Confirm New Password <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          placeholder="Confirm new password"
-          required
-        />
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="currentPassword">
+            Current Password <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="currentPassword"
+            name="currentPassword"
+            type="password"
+            placeholder="Enter current password"
+            required
+          />
+        </div>
 
-      <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={() => router.push(returnUrl)}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Changing Password...
-            </>
-          ) : (
-            'Change Password'
-          )}
-        </Button>
-      </div>
-    </form>
+        <div className="space-y-2">
+          <Label htmlFor="newPassword">
+            New Password <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="newPassword"
+            name="newPassword"
+            type="password"
+            placeholder="Enter new password"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">
+            Confirm New Password <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            placeholder="Confirm new password"
+            required
+          />
+        </div>
+
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" onClick={() => router.push(returnUrl)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Changing Password...
+              </>
+            ) : (
+              'Change Password'
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }

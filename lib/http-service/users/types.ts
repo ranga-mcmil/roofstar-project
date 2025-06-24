@@ -2,6 +2,7 @@
  * users/types.ts
  * 
  * This file contains the TypeScript type definitions for user-related data.
+ * Updated to match the actual API specification.
  */
 
 import { z } from 'zod';
@@ -13,22 +14,24 @@ export type UpdateUserPayload = z.infer<typeof UpdateUserSchema>;
 export type ChangePasswordPayload = z.infer<typeof ChangePasswordSchema>;
 export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordSchema>;
 
-// Response types matching API spec
+// Response types matching actual API spec
 export interface UserDTO {
-  id: string;
+  id: string; // UUID format
   email: string;
   firstName: string;
   lastName: string;
   role: string;
-  branchId: string;
+  branchId: string; // Added - present in API response
+  branchName: string; // Added - present in API response
+  isActive: boolean; // Added - present in API response
 }
 
 export interface UserPaginationParams {
+  branchId?: string; // UUID format
   pageNo?: number;
   pageSize?: number;
   sortBy?: string;
   sortDir?: string;
-  branchId?: string;
 }
 
 export interface PaginationResponse<T> {
