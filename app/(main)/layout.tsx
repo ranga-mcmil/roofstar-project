@@ -1,8 +1,8 @@
 import type React from "react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { NextAuthProvider } from "./providers/next-auth-provider";
-
+import { NextAuthProvider } from "./providers/next-auth-provider"
+import { UnauthorizedHandler } from "@/components/unauthorized-handler"
 
 export default function MainLayout({
   children,
@@ -15,6 +15,7 @@ export default function MainLayout({
         <SiteHeader />
         <div className="flex-1">{children}</div>
         <SiteFooter />
+        <UnauthorizedHandler />
       </div>
     </NextAuthProvider>
   )

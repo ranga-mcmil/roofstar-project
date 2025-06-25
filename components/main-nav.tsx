@@ -23,20 +23,36 @@ export function MainNav() {
         return [
           { href: "/", label: "Dashboard" },
           { href: "/branches", label: "Branches" },
-          { href: "/users", label: "Users" }
+          { href: "/users", label: "Users" },
+          { href: "/customers", label: "Customers" },
+          { href: "/products", label: "Products" },
+          { href: "/batches", label: "Batches" },
+          { href: "/orders", label: "Orders" },
+          { href: "/productions", label: "Productions" },
+          { href: "/stock-movements", label: "Stock Movements" },
+          { href: "/reports", label: "Reports" }
         ]
       
       case USER_ROLES.MANAGER:
         return [
           { href: "/", label: "Dashboard" },
-          { href: "/products", label: "Products" }
-          // Note: Orders will be shown as icon in site-header
+          { href: "/customers", label: "Customers" },
+          { href: "/products", label: "Products" },
+          { href: "/batches", label: "Batches" },
+          { href: "/orders", label: "Orders" },
+          { href: "/productions", label: "Productions" },
+          { href: "/stock-movements", label: "Stock Movements" },
+          { href: "/reports", label: "Reports" }
         ]
       
       case USER_ROLES.SALES_REP:
         return [
-          { href: "/pos", label: "Point of Sale" }
-          // Note: Orders will be shown as icon in site-header
+          { href: "/", label: "Dashboard" },
+          { href: "/pos", label: "Point of Sale" },
+          { href: "/customers", label: "Customers" },
+          { href: "/products", label: "Products" },
+          { href: "/orders", label: "Orders" },
+          { href: "/reports", label: "Reports" }
         ]
       
       default:

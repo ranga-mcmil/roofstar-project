@@ -86,35 +86,51 @@ export function SiteHeader() {
   const roleColorClass = userRole ? getRoleColor(userRole) : getRoleColor(USER_ROLES.SALES_REP)
 
   // Get mobile nav items based on role
-  const getMobileNavItems = () => {
-    if (!userRole) return []
+  // Replace the getMobileNavItems function in your site-header.tsx with this:
+const getMobileNavItems = () => {
+  if (!userRole) return []
+  
+  switch (userRole) {
+    case USER_ROLES.ADMIN:
+      return [
+        { href: "/", label: "Dashboard" },
+        { href: "/branches", label: "Branches" },
+        { href: "/users", label: "Users" },
+        { href: "/customers", label: "Customers" },
+        { href: "/products", label: "Products" },
+        { href: "/batches", label: "Batches" },
+        { href: "/orders", label: "Orders" },
+        { href: "/productions", label: "Productions" },
+        { href: "/stock-movements", label: "Stock Movements" },
+        { href: "/reports", label: "Reports" }
+      ]
     
-    switch (userRole) {
-      case USER_ROLES.ADMIN:
-        return [
-          { href: "/", label: "Dashboard" },
-          { href: "/branches", label: "Branches" },
-          { href: "/users", label: "Users" },
-          { href: "/orders", label: "Orders" }
-        ]
-      
-      case USER_ROLES.MANAGER:
-        return [
-          { href: "/", label: "Dashboard" },
-          { href: "/products", label: "Products" },
-          { href: "/orders", label: "Orders" }
-        ]
-      
-      case USER_ROLES.SALES_REP:
-        return [
-          { href: "/pos", label: "Point of Sale" },
-          { href: "/orders", label: "Orders" }
-        ]
-      
-      default:
-        return []
-    }
+    case USER_ROLES.MANAGER:
+      return [
+        { href: "/", label: "Dashboard" },
+        { href: "/customers", label: "Customers" },
+        { href: "/products", label: "Products" },
+        { href: "/batches", label: "Batches" },
+        { href: "/orders", label: "Orders" },
+        { href: "/productions", label: "Productions" },
+        { href: "/stock-movements", label: "Stock Movements" },
+        { href: "/reports", label: "Reports" }
+      ]
+    
+    case USER_ROLES.SALES_REP:
+      return [
+        { href: "/", label: "Dashboard" },
+        { href: "/pos", label: "Point of Sale" },
+        { href: "/customers", label: "Customers" },
+        { href: "/products", label: "Products" },
+        { href: "/orders", label: "Orders" },
+        { href: "/reports", label: "Reports" }
+      ]
+    
+    default:
+      return []
   }
+}
 
   // Determine which icons to show on desktop
   const shouldShowOrdersIcon = userRole === USER_ROLES.MANAGER || userRole === USER_ROLES.SALES_REP || userRole === USER_ROLES.ADMIN
