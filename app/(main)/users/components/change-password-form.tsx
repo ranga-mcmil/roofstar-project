@@ -1,3 +1,4 @@
+// app/(main)/users/components/change-password-form.tsx - Fixed to remove userId parameter
 "use client";
 
 import { useState } from "react";
@@ -41,7 +42,7 @@ export function ChangePasswordFormClient({ user, returnUrl }: ChangePasswordForm
         return;
       }
       
-      // Submit to the server action (updated to remove userId parameter since it uses auth endpoint)
+      // Submit to the server action (removed userId parameter since auth endpoint uses session)
       const response = await changePasswordAction(formData);
 
       if (response.success) {
@@ -60,6 +61,23 @@ export function ChangePasswordFormClient({ user, returnUrl }: ChangePasswordForm
         // If there are field errors, we could display them inline
         if (response.fieldErrors) {
           console.error("Field errors:", response.fieldErrors);
+          
+          // Handle specific field errors
+          const fieldErrors = response.fieldErrors;
+          if (fieldErrors.currentPassword) {
+            toast({
+              title: "Invalid Current Password",
+              description: fieldErrors.currentPassword[0],
+              variant: "destructive",
+            });
+          }
+          if (fieldErrors.newPassword) {
+            toast({
+              title: "Invalid New Password",
+              description: fieldErrors.newPassword[0],
+              variant: "destructive",
+            });
+          }
         }
       }
     } catch (error) {
@@ -97,6 +115,7 @@ export function ChangePasswordFormClient({ user, returnUrl }: ChangePasswordForm
             type="password"
             placeholder="Enter current password"
             required
+            disabled={isSubmitting}
           />
         </div>
 
@@ -110,7 +129,11 @@ export function ChangePasswordFormClient({ user, returnUrl }: ChangePasswordForm
             type="password"
             placeholder="Enter new password"
             required
+            disabled={isSubmitting}
           />
+          <p className="text-xs text-muted-foreground">
+            Password should be at least 6 characters long.
+          </p>
         </div>
         
         <div className="space-y-2">
@@ -123,11 +146,17 @@ export function ChangePasswordFormClient({ user, returnUrl }: ChangePasswordForm
             type="password"
             placeholder="Confirm new password"
             required
+            disabled={isSubmitting}
           />
         </div>
 
         <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={() => router.push(returnUrl)}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => router.push(returnUrl)}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>

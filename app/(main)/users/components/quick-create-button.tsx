@@ -1,13 +1,14 @@
-// app/(main)/users/components/quick-create-button.tsx - Updated to remove branch selection
+// app/(main)/users/components/quick-create-button.tsx - Fixed with branch dropdown
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createUserAction } from "@/actions/users";
+import { getBranchesAction } from "@/actions/branches";
 import { Plus, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { 
@@ -18,21 +19,57 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { USER_ROLES } from "@/lib/types";
+import { BranchDTO } from "@/lib/http-service/branches/types";
 
 export function QuickCreateButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [branches, setBranches] = useState<BranchDTO[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
-  // Initialize form state - UPDATED DEFAULT ROLE
+  // Initialize form state
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
     lastName: '',
     password: '',
-    role: USER_ROLES.SALES_REP, // Updated to use new role constant
+    role: USER_ROLES.SALES_REP,
+    branchId: '__none__', // Use special value instead of empty string
   });
+
+  // Load branches when dialog opens
+  useEffect(() => {
+    if (isOpen && branches.length === 0) {
+      const fetchBranches = async () => {
+        setBranchesLoading(true);
+        try {
+          const response = await getBranchesAction();
+          if (response.success && response.data) {
+            setBranches(response.data.content);
+          } else {
+            toast({
+              title: "Failed to load branches",
+              description: "Branch selection may not be available.",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching branches:", error);
+          toast({
+            title: "Error loading branches",
+            description: "Branch selection may not be available.",
+            variant: "destructive",
+          });
+        } finally {
+          setBranchesLoading(false);
+        }
+      };
+
+      fetchBranches();
+    }
+  }, [isOpen, branches.length, toast]);
 
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +95,11 @@ export function QuickCreateButton() {
       submitData.append('lastName', formData.lastName);
       submitData.append('password', formData.password);
       submitData.append('role', formData.role);
-      // Note: Branch assignment removed since API doesn't support it in user creation
+      
+      // Add branchId if selected and not the "none" option
+      if (formData.branchId && formData.branchId !== '__none__') {
+        submitData.append('branchId', formData.branchId);
+      }
 
       // Submit to the server action
       const response = await createUserAction(submitData);
@@ -78,7 +119,8 @@ export function QuickCreateButton() {
           firstName: '',
           lastName: '',
           password: '',
-          role: USER_ROLES.SALES_REP, // Reset to default role
+          role: USER_ROLES.SALES_REP,
+          branchId: '__none__',
         });
         
         // Refresh data without full page reload
@@ -90,6 +132,11 @@ export function QuickCreateButton() {
           description: response.error || "There was a problem creating the user. Please try again.",
           variant: "destructive",
         });
+
+        // Handle field errors
+        if (response.fieldErrors) {
+          console.error("Field errors:", response.fieldErrors);
+        }
       }
     } catch (error) {
       console.error("Error creating user:", error);
@@ -193,10 +240,29 @@ export function QuickCreateButton() {
               </Select>
             </div>
 
-            {/* Info note about branch assignment */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-xs text-blue-600">
-                <strong>Note:</strong> Branch assignments will be managed by system administrators after user creation.
+            <div className="grid gap-2">
+              <Label htmlFor="branchId" className="font-medium">Branch Assignment</Label>
+              <Select 
+                value={formData.branchId} 
+                onValueChange={(value) => handleSelectChange('branchId', value)}
+                disabled={isLoading || branchesLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={
+                    branchesLoading ? "Loading branches..." : "Select branch (optional)"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No Branch Assignment</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name} {branch.location && `(${branch.location})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Optional: Assign user to a specific branch for role-based access
               </p>
             </div>
           </div>
@@ -211,7 +277,7 @@ export function QuickCreateButton() {
             </Button>
             <Button 
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || branchesLoading}
             >
               {isLoading ? (
                 <>

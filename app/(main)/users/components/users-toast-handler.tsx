@@ -1,9 +1,9 @@
+// app/(main)/users/components/users-toast-handler.tsx - Added deactivated message
 'use client';
 
 import { useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
 
 export function UsersToastHandler() {
   const searchParams = useSearchParams();
@@ -40,7 +40,7 @@ export function UsersToastHandler() {
       shouldUpdateUrl = true;
     }
     
-    // Check for deleted=true query parameter
+    // Check for deleted=true query parameter (kept for backwards compatibility)
     if (params.get('deleted') === 'true') {
       toast({
         title: "User Deleted",
@@ -48,8 +48,19 @@ export function UsersToastHandler() {
         variant: "default",
       });
       
-      // Remove the parameter after showing toast
       params.delete('deleted');
+      shouldUpdateUrl = true;
+    }
+    
+    // Check for deactivated=true query parameter
+    if (params.get('deactivated') === 'true') {
+      toast({
+        title: "User Deactivated",
+        description: "The user has been successfully deactivated and can no longer access the system.",
+        variant: "default",
+      });
+      
+      params.delete('deactivated');
       shouldUpdateUrl = true;
     }
     
@@ -62,7 +73,6 @@ export function UsersToastHandler() {
         variant: "destructive",
       });
       
-      // Remove the parameter after showing toast
       params.delete('error');
       shouldUpdateUrl = true;
     }

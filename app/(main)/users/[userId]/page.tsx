@@ -1,8 +1,8 @@
-// app/(main)/users/[userId]/page.tsx - Updated to use API response fields
+// app/(main)/users/[userId]/page.tsx - Fixed role display consistency
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Download, Edit, KeyRound, Power } from "lucide-react"
+import { ArrowLeft, Edit, KeyRound, Power, UserX } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getUserAction } from "@/actions/users"
@@ -37,17 +37,39 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
     notFound();
   }
 
-  // Get role badge - UPDATED TO USE NEW ROLES
+  // Get role badge - CONSISTENT WITH API RESPONSE
   const getRoleBadge = (role: string) => {
     switch (role) {
       case USER_ROLES.ADMIN:
+      case 'ROLE_ADMIN':
         return <Badge className="bg-purple-500">Admin</Badge>;
       case USER_ROLES.MANAGER:
+      case 'ROLE_MANAGER':
         return <Badge className="bg-blue-500">Manager</Badge>;
       case USER_ROLES.SALES_REP:
+      case 'ROLE_SALES_REP':
         return <Badge variant="outline">Sales Rep</Badge>;
       default:
-        return <Badge variant="secondary">Unknown Role</Badge>;
+        // Handle any other role format by cleaning it up
+        const cleanRole = role.replace('ROLE_', '').replace('_', ' ');
+        return <Badge variant="secondary">{cleanRole}</Badge>;
+    }
+  };
+
+  // Get role display name for text
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case USER_ROLES.ADMIN:
+      case 'ROLE_ADMIN':
+        return 'Administrator';
+      case USER_ROLES.MANAGER:
+      case 'ROLE_MANAGER':
+        return 'Manager';
+      case USER_ROLES.SALES_REP:
+      case 'ROLE_SALES_REP':
+        return 'Sales Representative';
+      default:
+        return role.replace('ROLE_', '').replace('_', ' ');
     }
   };
 
@@ -119,6 +141,13 @@ export default async function UserDetailsPage({ params, searchParams }: UserDeta
                 {user.isActive ? 'Deactivate' : 'Activate'}
               </Link>
             </Button>
+            {user.isActive && (
+              <Button variant="destructive" asChild>
+                <Link href={`/users/${userId}/delete`}>
+                  <UserX className="mr-2 h-4 w-4" /> Deactivate
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

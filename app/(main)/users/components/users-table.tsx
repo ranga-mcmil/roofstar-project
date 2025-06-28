@@ -1,4 +1,4 @@
-// app/(main)/users/components/users-table.tsx - Updated to use API response fields
+// app/(main)/users/components/users-table.tsx - Fixed role display and deactivate link
 'use client';
 
 import { useTransition } from 'react';
@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Eye, KeyRound, Power, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, Eye, KeyRound, Power, UserX } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,17 +60,22 @@ export function UsersTable({
     }
   };
 
-  // Get role badge - UPDATED TO USE NEW ROLES
+  // Get role badge - CONSISTENT WITH API RESPONSE
   const getRoleBadge = (role: string) => {
     switch (role) {
       case USER_ROLES.ADMIN:
+      case 'ROLE_ADMIN':
         return <Badge className="bg-purple-500">Admin</Badge>;
       case USER_ROLES.MANAGER:
+      case 'ROLE_MANAGER':
         return <Badge className="bg-blue-500">Manager</Badge>;
       case USER_ROLES.SALES_REP:
+      case 'ROLE_SALES_REP':
         return <Badge variant="outline">Sales Rep</Badge>;
       default:
-        return <Badge variant="secondary">Unknown Role</Badge>;
+        // Handle any other role format by cleaning it up
+        const cleanRole = role.replace('ROLE_', '').replace('_', ' ');
+        return <Badge variant="secondary">{cleanRole}</Badge>;
     }
   };
 
@@ -163,14 +168,16 @@ export function UsersTable({
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/users/${user.id}/delete`}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                          </Link>
-                        </DropdownMenuItem>
+                        {user.isActive && (
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href={`/users/${user.id}/delete`}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <UserX className="mr-2 h-4 w-4" /> Deactivate
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

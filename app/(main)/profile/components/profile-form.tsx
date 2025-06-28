@@ -1,4 +1,4 @@
-// app/(main)/profile/components/profile-form.tsx
+// app/(main)/profile/components/profile-form.tsx - Fixed role display consistency
 "use client"
 
 import { useState } from "react"
@@ -12,6 +12,7 @@ import { updateUserAction } from "@/actions/users"
 import { UserDTO } from "@/lib/http-service/users/types"
 import { BranchDTO } from "@/lib/http-service/branches/types"
 import { useRouter } from "next/navigation"
+import { USER_ROLES } from "@/lib/types"
 
 interface ProfileFormProps {
   userData: UserDTO
@@ -90,15 +91,20 @@ export function ProfileForm({ userData, branchData }: ProfileFormProps) {
     }
   }
 
+  // Get role display name - CONSISTENT WITH API RESPONSE
   const getRoleDisplayName = (role: string) => {
     switch (role) {
+      case USER_ROLES.ADMIN:
       case 'ROLE_ADMIN':
         return 'Administrator'
+      case USER_ROLES.MANAGER:
       case 'ROLE_MANAGER':
         return 'Manager'
+      case USER_ROLES.SALES_REP:
       case 'ROLE_SALES_REP':
         return 'Sales Representative'
       default:
+        // Handle any other role format by cleaning it up
         return role.replace('ROLE_', '').replace('_', ' ')
     }
   }

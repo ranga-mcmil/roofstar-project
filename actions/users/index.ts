@@ -1,6 +1,7 @@
 'use server';
 
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { accountsService } from "@/lib/http-service/accounts";
 import { APIResponse } from "@/lib/http-service/apiClient";
 import { userService } from "@/lib/http-service/users";
 import { 
@@ -236,3 +237,45 @@ export async function batchToggleUserStatusAction(userIds: string[]): Promise<AP
   
   return results;
 }
+
+
+/**
+ * Change password for the current user (uses auth endpoint)
+ * 
+ * POST /api/auth/change-password
+ */
+export async function changePasswordAction(formData: FormData): Promise<APIResponse<ChangePasswordResponse, ChangePasswordPayload>> {
+  const rawData: ChangePasswordPayload = {
+    currentPassword: formData.get('currentPassword') as string,
+    newPassword: formData.get('newPassword') as string,
+  }
+
+  // Validate the form data
+  const validatedData = ChangePasswordSchema.safeParse(rawData)
+
+  if (!validatedData.success) {
+    return {
+      success: false,
+      error: 'Please fix the errors in the form',
+      fieldErrors: validatedData.error.flatten().fieldErrors,
+      inputData: rawData
+    }
+  }
+
+  const res = await accountsService.changePassword(validatedData.data as ChangePasswordPayload);
+
+  if (res.success) {
+    // Don't revalidate user pages as this is a password change, not user data change
+    return {
+      success: true,
+      data: res.data,
+    };
+  } else {
+    return {
+      success: false,
+      error: res.error,
+      inputData: rawData
+    }
+  }
+}
+

@@ -1,20 +1,21 @@
+// app/(main)/users/[userId]/delete/page.tsx - Replaced delete with deactivation since API has no delete endpoint
 import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { UserX } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { getUserAction } from "@/actions/users";
+import { getUserAction, toggleUserStatusAction } from "@/actions/users";
 import { GetUserResponse } from "@/lib/http-service/users/types";
 import { APIResponse } from "@/lib/http-service/apiClient";
-import { DeleteButton } from "../../components/delete-button";
+import { DeactivateButton } from "../../components/deactivate-button";
 
-interface DeleteUserPageProps {
+interface DeactivateUserPageProps {
   params: {
     userId: string;
   };
 }
 
-export default async function DeleteUserPage({ params }: DeleteUserPageProps) {
+export default async function DeactivateUserPage({ params }: DeactivateUserPageProps) {
   const { userId } = params;
   
   // Get user details first
@@ -27,25 +28,25 @@ export default async function DeleteUserPage({ params }: DeleteUserPageProps) {
   
   const user: GetUserResponse = userResponse.data;
   
-  // Create a form action that uses the existing deleteUserAction (you'll need to create this)
-  async function handleDelete() {
+  // If user is already inactive, redirect to user details
+  if (!user.isActive) {
+    redirect(`/users/${userId}?error=${encodeURIComponent("User is already deactivated")}`);
+  }
+  
+  // Create a form action that deactivates the user
+  async function handleDeactivate() {
     "use server";
     
-    // Simulate a delay to show the loading state (can be removed in production)
+    // Simulate a delay to show the loading state
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Note: You'll need to create deleteUserAction in your users actions file
-    // For now, we'll just redirect with a success message
-    // const result = await deleteUserAction(userId);
-    
-    // Placeholder for future implementation
-    const result = { success: true };
+    const result = await toggleUserStatusAction(userId);
     
     if (result.success) {
-      redirect('/users?deleted=true');
+      redirect(`/users?deactivated=true`);
     } else {
-      // If deletion fails, redirect to users list with error
-      redirect(`/users?error=${encodeURIComponent("Failed to delete user")}`);
+      // If deactivation fails, redirect to users list with error
+      redirect(`/users?error=${encodeURIComponent(result.error || "Failed to deactivate user")}`);
     }
   }
   
@@ -53,27 +54,35 @@ export default async function DeleteUserPage({ params }: DeleteUserPageProps) {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="space-y-1 flex flex-col items-center text-center">
-          <Trash2 className="h-16 w-16 text-red-500 mb-2" />
-          <CardTitle className="text-2xl">Delete User</CardTitle>
+          <UserX className="h-16 w-16 text-amber-500 mb-2" />
+          <CardTitle className="text-2xl">Deactivate User</CardTitle>
           <CardDescription>
-            You are about to permanently delete user "{user.firstName} {user.lastName}".
-            This action cannot be undone.
+            You are about to deactivate user "{user.firstName} {user.lastName}".
+            This will prevent them from accessing the system.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <div className="p-3 bg-red-50 text-red-800 rounded-md">
-              <p className="font-medium">Warning:</p>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>This user will be permanently deleted</li>
-                <li>All user data and settings will be lost</li>
-                <li>This operation cannot be reversed</li>
+            <div className="p-3 bg-amber-50 text-amber-800 rounded-md">
+              <p className="font-medium">Note: User deletion is not available</p>
+              <p className="text-sm mt-1">
+                This system uses deactivation instead of deletion to preserve data integrity and audit trails.
+              </p>
+            </div>
+
+            <div className="p-3 bg-blue-50 text-blue-800 rounded-md">
+              <p className="font-medium">Deactivation will:</p>
+              <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                <li>Prevent the user from logging into the system</li>
+                <li>Preserve all user data and transaction history</li>
+                <li>Allow you to reactivate the account later if needed</li>
+                <li>Maintain data integrity for reporting and auditing</li>
               </ul>
             </div>
             
             <div className="p-3 bg-gray-50 border border-gray-200 rounded-md mt-2">
               <p className="font-medium">User details:</p>
-              <div className="mt-2 space-y-1">
+              <div className="mt-2 space-y-1 text-sm">
                 <p><span className="font-medium">Name:</span> {user.firstName} {user.lastName}</p>
                 <p><span className="font-medium">Email:</span> {user.email}</p>
                 <p><span className="font-medium">Role:</span> {user.role}</p>
@@ -87,7 +96,7 @@ export default async function DeleteUserPage({ params }: DeleteUserPageProps) {
           <Button variant="outline" asChild>
             <Link href={`/users/${userId}`}>Cancel</Link>
           </Button>
-          <DeleteButton deleteAction={handleDelete} />
+          <DeactivateButton deactivateAction={handleDeactivate} />
         </CardFooter>
       </Card>
     </div>

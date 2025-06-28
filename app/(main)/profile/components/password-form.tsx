@@ -1,4 +1,4 @@
-// app/(main)/profile/components/password-form.tsx
+// app/(main)/profile/components/password-form.tsx - Fixed to remove userId parameter
 "use client"
 
 import { useState } from "react"
@@ -78,11 +78,11 @@ export function PasswordForm({ userData }: PasswordFormProps) {
 
     try {
       const submitFormData = new FormData()
-      submitFormData.append('email', userData.email)
       submitFormData.append('currentPassword', formData.currentPassword)
       submitFormData.append('newPassword', formData.newPassword)
 
-      const response = await changePasswordAction(submitFormData, userData.id)
+      // Remove userId parameter since auth endpoint uses session user
+      const response = await changePasswordAction(submitFormData)
 
       if (response.success) {
         toast({
@@ -120,10 +120,6 @@ export function PasswordForm({ userData }: PasswordFormProps) {
           }
           if (response.fieldErrors.newPassword) {
             newErrors.newPassword = response.fieldErrors.newPassword[0]
-          }
-          if (response.fieldErrors.email) {
-            // If there's an email error, it might be related to the current password
-            newErrors.currentPassword = "Invalid credentials"
           }
           
           setErrors(newErrors)
