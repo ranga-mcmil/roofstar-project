@@ -18,7 +18,11 @@ import {
   UpdateUserResponse,
   ChangePasswordPayload,
   ForgotPasswordPayload,
-  UserPaginationParams
+  UserPaginationParams,
+  ToggleUserStatusResponse,
+  ChangePasswordResponse,
+  ForgotPasswordResponse,
+  GetCurrentUserResponse
 } from "@/lib/http-service/users/types";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
@@ -49,6 +53,7 @@ export async function createUserAction(formData: FormData): Promise<APIResponse<
 
   if (res.success) {
     revalidatePath('/users');
+    revalidatePath('/admin/users');
     return {
       success: true,
       data: res.data,
@@ -88,6 +93,7 @@ export async function updateUserAction(formData: FormData, userId: string): Prom
     revalidatePath(`/users/${userId}`);
     revalidatePath('/users');
     revalidatePath(`/users/${userId}/edit`);
+    revalidatePath('/admin/users');
     return {
       success: true,
       data: res.data,
@@ -101,12 +107,13 @@ export async function updateUserAction(formData: FormData, userId: string): Prom
   }
 }
 
-export async function toggleUserStatusAction(userId: string): Promise<APIResponse<Record<string, boolean>>> {
+export async function toggleUserStatusAction(userId: string): Promise<APIResponse<ToggleUserStatusResponse>> {
   const res = await userService.toggleUserStatus(userId);
   
   if (res.success) {
     revalidatePath(`/users/${userId}`);
     revalidatePath('/users');
+    revalidatePath('/admin/users');
   }
   
   return res;
@@ -120,45 +127,11 @@ export async function getUsersAction(params?: UserPaginationParams): Promise<API
   return await userService.get_users(params);
 }
 
-export async function getCurrentUserAction(): Promise<APIResponse<GetUserResponse>> {
+export async function getCurrentUserAction(): Promise<APIResponse<GetCurrentUserResponse>> {
   return await userService.getCurrentUser();
 }
 
-export async function changePasswordAction(formData: FormData): Promise<APIResponse<Record<string, string>, ChangePasswordPayload>> {
-  const rawData: ChangePasswordPayload = {
-    currentPassword: formData.get('currentPassword') as string,
-    newPassword: formData.get('newPassword') as string,
-  }
-
-  // Validate the form data
-  const validatedData = ChangePasswordSchema.safeParse(rawData)
-
-  if (!validatedData.success) {
-    return {
-      success: false,
-      error: 'Please fix the errors in the form',
-      fieldErrors: validatedData.error.flatten().fieldErrors,
-      inputData: rawData
-    }
-  }
-
-  const res = await userService.changePassword(validatedData.data as ChangePasswordPayload);
-
-  if (res.success) {
-    return {
-      success: true,
-      data: res.data,
-    };
-  } else {
-    return {
-      success: false,
-      error: res.error,
-      inputData: rawData
-    }
-  }
-}
-
-export async function forgotPasswordAction(formData: FormData, userId: string): Promise<APIResponse<Record<string, string>, ForgotPasswordPayload>> {
+export async function forgotPasswordAction(formData: FormData, userId: string): Promise<APIResponse<ForgotPasswordResponse, ForgotPasswordPayload>> {
   const rawData: ForgotPasswordPayload = {
     newPassword: formData.get('newPassword') as string,
   }
@@ -178,6 +151,7 @@ export async function forgotPasswordAction(formData: FormData, userId: string): 
   const res = await userService.forgotPassword(userId, validatedData.data as ForgotPasswordPayload);
 
   if (res.success) {
+    // Don't revalidate user pages as this is a password reset, not user data change
     return {
       success: true,
       data: res.data,
@@ -189,4 +163,76 @@ export async function forgotPasswordAction(formData: FormData, userId: string): 
       inputData: rawData
     }
   }
+}
+
+/**
+ * Get users with revalidation - useful for pages that need fresh data
+ */
+export async function getUsersWithRevalidationAction(params?: UserPaginationParams): Promise<APIResponse<GetUsersResponse>> {
+  const res = await userService.get_users(params);
+  
+  if (res.success) {
+    revalidatePath('/users');
+    revalidatePath('/admin/users');
+  }
+  
+  return res;
+}
+
+/**
+ * Get user details with revalidation
+ */
+export async function getUserWithRevalidationAction(userId: string): Promise<APIResponse<GetUserResponse>> {
+  const res = await userService.get_user(userId);
+  
+  if (res.success) {
+    revalidatePath(`/users/${userId}`);
+  }
+  
+  return res;
+}
+
+/**
+ * Get current user with revalidation
+ */
+export async function getCurrentUserWithRevalidationAction(): Promise<APIResponse<GetCurrentUserResponse>> {
+  const res = await userService.getCurrentUser();
+  
+  if (res.success) {
+    revalidatePath('/profile');
+    revalidatePath('/dashboard');
+  }
+  
+  return res;
+}
+
+/**
+ * Get users by branch with filtering
+ */
+export async function getUsersByBranchAction(branchId: string, params?: Omit<UserPaginationParams, 'branchId'>): Promise<APIResponse<GetUsersResponse>> {
+  const queryParams: UserPaginationParams = {
+    ...params,
+    branchId
+  };
+  
+  return await userService.get_users(queryParams);
+}
+
+/**
+ * Batch toggle user status for multiple users
+ */
+export async function batchToggleUserStatusAction(userIds: string[]): Promise<APIResponse<ToggleUserStatusResponse>[]> {
+  const promises = userIds.map(userId => userService.toggleUserStatus(userId));
+  const results = await Promise.all(promises);
+  
+  // Revalidate if any were successful
+  if (results.some(result => result.success)) {
+    revalidatePath('/users');
+    revalidatePath('/admin/users');
+    userIds.forEach(userId => {
+      revalidatePath(`/users/${userId}`);
+    });
+  }
+  
+  return results;
 }

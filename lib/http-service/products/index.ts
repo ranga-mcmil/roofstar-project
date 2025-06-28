@@ -3,6 +3,7 @@
  * 
  * This file contains the ProductService class that implements API requests
  * to the product-controller endpoints.
+ * Updated to match API specification exactly.
  */
 
 import { apiClient, APIResponse } from "@/lib/http-service/apiClient";
@@ -36,7 +37,13 @@ export class ProductService extends BaseAPIRequests {
     };
 
     const queryParams = { ...defaultParams, ...params };
-    const queryString = new URLSearchParams(queryParams as any).toString();
+    const queryString = new URLSearchParams(
+      Object.entries(queryParams).reduce((acc, [key, value]) => {
+        if (value !== undefined) acc[key] = String(value);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    
     const url = `/api/products?${queryString}`;
 
     try {
@@ -155,7 +162,13 @@ export class ProductService extends BaseAPIRequests {
     };
 
     const queryParams = { ...defaultParams, ...params };
-    const queryString = new URLSearchParams(queryParams as any).toString();
+    const queryString = new URLSearchParams(
+      Object.entries(queryParams).reduce((acc, [key, value]) => {
+        if (value !== undefined) acc[key] = String(value);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    
     const url = `/api/products/categories/${categoryId}/products?${queryString}`;
 
     try {
@@ -186,7 +199,13 @@ export class ProductService extends BaseAPIRequests {
     };
 
     const queryParams = { ...defaultParams, ...params };
-    const queryString = new URLSearchParams(queryParams as any).toString();
+    const queryString = new URLSearchParams(
+      Object.entries(queryParams).reduce((acc, [key, value]) => {
+        if (value !== undefined) acc[key] = String(value);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    
     const url = `/api/products/branches/${branchId}/products?${queryString}`;
 
     try {

@@ -7,11 +7,12 @@
  */
 
 import { z } from 'zod';
-import { CreateProductSchema, UpdateProductSchema } from './schema';
+import { CreateProductSchema, UpdateProductSchema, TypeOfProductStatusEnum } from './schema';
 
 // Schema-derived types
 export type CreateProductPayload = z.infer<typeof CreateProductSchema>;
 export type UpdateProductPayload = z.infer<typeof UpdateProductSchema>;
+export type TypeOfProductStatus = z.infer<typeof TypeOfProductStatusEnum>;
 
 // Response types from API based on OpenAPI spec - Updated to match exactly
 export interface ProductDTO {
@@ -21,12 +22,13 @@ export interface ProductDTO {
   colorName: string;
   thickness: number;
   branchId: string; // UUID format
-  branchName: string; // Added missing field
+  branchName: string;
   productCategoryName: string;
-  unitOfMeasure: string; // Added missing field
+  unitOfMeasure: string;
   price: number;
   isActive: boolean;
   stockQuantity: number;
+  typeOfProduct: string; // This is the response field name for typeOfProductStatus
 }
 
 export interface PaginationParams {

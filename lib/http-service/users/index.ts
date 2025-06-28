@@ -2,7 +2,7 @@
  * users/index.ts
  * 
  * This file contains the UserService class that implements API requests
- * to the user-controller endpoints. Updated to match actual API spec.
+ * to the user-controller endpoints. Updated to match actual API spec exactly.
  */
 
 import { apiClient, APIResponse } from "@/lib/http-service/apiClient";
@@ -17,7 +17,11 @@ import {
   UpdateUserResponse,
   ChangePasswordPayload,
   ForgotPasswordPayload,
-  UserPaginationParams
+  UserPaginationParams,
+  ToggleUserStatusResponse,
+  ChangePasswordResponse,
+  ForgotPasswordResponse,
+  GetCurrentUserResponse
 } from "./types";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/next-auth-options";
@@ -66,14 +70,14 @@ export class UserService extends BaseAPIRequests {
    * 
    * GET /api/users/me
    */
-  async getCurrentUser(): Promise<APIResponse<GetUserResponse>> {
+  async getCurrentUser(): Promise<APIResponse<GetCurrentUserResponse>> {
     const url = `/api/users/me`;
 
     try {
       const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.get(url, { headers });
-      return this.handleResponse<GetUserResponse>(response);
+      return this.handleResponse<GetCurrentUserResponse>(response);
     } catch (error) {
       console.error('User Service request failed:', error);
       return {
@@ -154,36 +158,14 @@ export class UserService extends BaseAPIRequests {
    * 
    * PATCH /api/users/{userId}/toggle-status
    */
-  async toggleUserStatus(userId: string): Promise<APIResponse<Record<string, boolean>>> {
+  async toggleUserStatus(userId: string): Promise<APIResponse<ToggleUserStatusResponse>> {
     const url = `/api/users/${userId}/toggle-status`;
 
     try {
       const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.patch(url, {}, { headers });
-      return this.handleResponse<Record<string, boolean>>(response);
-    } catch (error) {
-      console.error('User Service request failed:', error);
-      return {
-        success: false,
-        error: (error as Error).message || 'An unknown error occurred',
-      };
-    }
-  }
-
-  /**
-   * Change password (uses auth controller endpoint)
-   * 
-   * POST /api/auth/change-password
-   */
-  async changePassword(payload: ChangePasswordPayload): Promise<APIResponse<Record<string, string>>> {
-    const url = `/api/auth/change-password`;
-
-    try {
-      const session = await getServerSession(authOptions);
-      const headers = await this.apiHeaders.getHeaders(session);
-      const response = await this.client.post(url, payload, { headers });
-      return this.handleResponse<Record<string, string>>(response);
+      return this.handleResponse<ToggleUserStatusResponse>(response);
     } catch (error) {
       console.error('User Service request failed:', error);
       return {
@@ -198,14 +180,14 @@ export class UserService extends BaseAPIRequests {
    * 
    * POST /api/users/{userId}/forgot-password
    */
-  async forgotPassword(userId: string, payload: ForgotPasswordPayload): Promise<APIResponse<Record<string, string>>> {
+  async forgotPassword(userId: string, payload: ForgotPasswordPayload): Promise<APIResponse<ForgotPasswordResponse>> {
     const url = `/api/users/${userId}/forgot-password`;
 
     try {
       const session = await getServerSession(authOptions);
       const headers = await this.apiHeaders.getHeaders(session);
       const response = await this.client.post(url, payload, { headers });
-      return this.handleResponse<Record<string, string>>(response);
+      return this.handleResponse<ForgotPasswordResponse>(response);
     } catch (error) {
       console.error('User Service request failed:', error);
       return {

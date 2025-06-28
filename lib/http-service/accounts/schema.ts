@@ -14,3 +14,7 @@ export const RefreshTokenSchema = z.object({
     refreshToken: z.string(),
 });
 
+export const ChangePasswordSchema = z.object({
+    currentPassword: z.string().min(1, { message: 'Current password is required' }),
+    newPassword: z.string().min(1, { message: 'New password is required' }),
+});
