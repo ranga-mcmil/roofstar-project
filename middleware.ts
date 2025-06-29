@@ -48,7 +48,13 @@ const accessRules = {
      "/stock-movements",
      "/users", // Can manage branch users
      "/settings", // Branch settings only
-     "/reports"
+     "/reports",
+     "/referrals",
+     "/referral-payments",
+     "/referrals/new",
+     "/referrals/*/delete",
+     "/referrals/*/edit",
+     "/referrals/*"
    ],
    restrictedPaths: [
      "/branches/*/edit", // Cannot edit branches
