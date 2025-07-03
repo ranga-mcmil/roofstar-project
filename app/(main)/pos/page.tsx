@@ -43,16 +43,18 @@ import { ProductCategoryDTO } from "@/lib/http-service/categories/types"
 import { OrderType, PaymentMethod } from "@/lib/http-service/orders/types"
 import { USER_ROLES } from "@/lib/types"
 
-// Enhanced cart item type - Updated to match API schema
+// Enhanced cart item type - Updated to include product type and weight
 interface CartItem {
-  productId: number  // Changed from 'id' to 'productId' to match API
+  productId: number
   name: string
   price: number
   quantity: number
   length: number
   width: number
+  weight: number
   discount: number
   notes?: string
+  typeOfProduct: string
 }
 
 // Layaway configuration type
@@ -345,6 +347,19 @@ export default function POSPage() {
   const userBranch = session?.user?.branchId
   const isAdmin = userRole === USER_ROLES.ADMIN
 
+  // Helper function to calculate line total based on product type (without discount)
+  const getLineTotal = (item: CartItem) => {
+    switch (item.typeOfProduct) {
+      case "LENGTH_WIDTH":
+        return item.price * item.quantity * item.length * item.width;
+      case "WEIGHT":
+        return item.price * item.quantity * item.weight;
+      case "UNKNOWN":
+      default:
+        return item.price * item.quantity;
+    }
+  }
+
   // Load initial data
   useEffect(() => {
     // Don't load data until session is ready
@@ -463,7 +478,7 @@ export default function POSPage() {
     )
   }
 
-  // Cart operations - Updated to use productId
+  // Cart operations - Updated to include typeOfProduct and weight
   const addToCart = (product: ProductDTO) => {
     const existingItem = cartItems.find(item => item.productId === product.id)
     
@@ -483,8 +498,10 @@ export default function POSPage() {
         quantity: 1,
         length: 1,
         width: 1,
+        weight: 1,
         discount: 0,
-        notes: ""
+        notes: "",
+        typeOfProduct: product.typeOfProduct
       }
       setCartItems(items => [...items, newItem])
     }
@@ -509,6 +526,14 @@ export default function POSPage() {
     setCartItems(items => 
       items.map(item => 
         item.productId === productId ? { ...item, length, width } : item
+      )
+    )
+  }
+
+  const updateWeight = (productId: number, weight: number) => {
+    setCartItems(items => 
+      items.map(item => 
+        item.productId === productId ? { ...item, weight } : item
       )
     )
   }
@@ -544,12 +569,9 @@ export default function POSPage() {
     })
   }
 
-  // Calculate totals
+  // Calculate totals using the simplified getLineTotal function
   const subtotal = cartItems.reduce((sum, item) => {
-    const area = item.length * item.width
-    const lineTotal = item.price * item.quantity * area
-    const discountAmount = (item.discount / 100) * lineTotal
-    return sum + (lineTotal - discountAmount)
+    return sum + getLineTotal(item);
   }, 0)
   
   const taxRate = 0.15
@@ -670,8 +692,8 @@ export default function POSPage() {
       const orderItems = cartItems.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
-        length: item.length,
-        width: item.width,
+        length: item.typeOfProduct === "LENGTH_WIDTH" ? item.length : 1,
+        width: item.typeOfProduct === "LENGTH_WIDTH" ? item.width : 1,
         discount: item.discount,
         notes: item.notes || ""
       }))
@@ -877,65 +899,111 @@ export default function POSPage() {
                             </Button>
                           </div>
                           
-                          <div className="mt-2 grid grid-cols-3 gap-2">
-                            <div>
-                              <Label className="text-xs">Qty</Label>
-                              <Input
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
-                                className="h-8 text-center"
-                                min="1"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Length (m)</Label>
-                              <Input
-                                type="number"
-                                step="0.1"
-                                value={item.length}
-                                onChange={(e) => updateDimensions(item.productId, parseFloat(e.target.value) || 1, item.width)}
-                                className="h-8 text-center"
-                                min="0.1"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Width (m)</Label>
-                              <Input
-                                type="number"
-                                step="0.1"
-                                value={item.width}
-                                onChange={(e) => updateDimensions(item.productId, item.length, parseFloat(e.target.value) || 1)}
-                                className="h-8 text-center"
-                                min="0.1"
-                              />
-                            </div>
-                          </div>
-
+                          {/* Conditional input fields based on product type */}
                           <div className="mt-2">
-                            <Label className="text-xs">Discount (%)</Label>
-                            <Input
-                              type="number"
-                              step="0.1"
-                              value={item.discount}
-                              onChange={(e) => updateDiscount(item.productId, parseFloat(e.target.value) || 0)}
-                              className="h-8 text-center"
-                              min="0"
-                              max="100"
-                            />
+                            {/* Length and Width fields with Quantity - for LENGTH_WIDTH products */}
+                            {item.typeOfProduct === "LENGTH_WIDTH" && (
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <Label className="text-xs">Qty</Label>
+                                  <Input
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
+                                    className="h-8 text-center"
+                                    min="1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Length (m)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    value={item.length}
+                                    onChange={(e) => updateDimensions(item.productId, parseFloat(e.target.value) || 1, item.width)}
+                                    className="h-8 text-center"
+                                    min="0.1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Width (m)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    value={item.width}
+                                    onChange={(e) => updateDimensions(item.productId, item.length, parseFloat(e.target.value) || 1)}
+                                    className="h-8 text-center"
+                                    min="0.1"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Weight field with Quantity - for WEIGHT products */}
+                            {item.typeOfProduct === "WEIGHT" && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label className="text-xs">Qty</Label>
+                                  <Input
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
+                                    className="h-8 text-center"
+                                    min="1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Weight (kg)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    value={item.weight}
+                                    onChange={(e) => updateWeight(item.productId, parseFloat(e.target.value) || 1)}
+                                    className="h-8 text-center"
+                                    min="0.1"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Quantity only - for UNKNOWN products */}
+                            {item.typeOfProduct === "UNKNOWN" && (
+                              <div className="grid grid-cols-1">
+                                <div>
+                                  <Label className="text-xs">Quantity</Label>
+                                  <Input
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
+                                    className="h-8 text-center"
+                                    min="1"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                           
                           <div className="mt-2 text-right">
-                            <div className="text-sm text-muted-foreground">
-                              Area: {(item.length * item.width).toFixed(2)} m²
-                            </div>
-                            {item.discount > 0 && (
-                              <div className="text-xs text-muted-foreground line-through">
-                                ${(item.price * item.quantity * item.length * item.width).toFixed(2)}
+                            {/* Display appropriate measurement based on product type */}
+                            {item.typeOfProduct === "LENGTH_WIDTH" && (
+                              <div className="text-sm text-muted-foreground">
+                                Area: {(item.length * item.width).toFixed(2)} m²
                               </div>
                             )}
+                            {item.typeOfProduct === "WEIGHT" && (
+                              <div className="text-sm text-muted-foreground">
+                                Weight: {item.weight.toFixed(2)} kg
+                              </div>
+                            )}
+                            {item.typeOfProduct === "UNKNOWN" && (
+                              <div className="text-sm text-muted-foreground">
+                                Quantity: {item.quantity}
+                              </div>
+                            )}
+                            
+                            {/* Show line total only */}
                             <div className="font-medium">
-                              ${((item.price * item.quantity * item.length * item.width) * (1 - item.discount / 100)).toFixed(2)}
+                              ${getLineTotal(item, false).toFixed(2)}
                             </div>
                           </div>
                         </div>
