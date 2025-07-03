@@ -26,7 +26,7 @@ export async function createProductAction(formData: FormData): Promise<APIRespon
     productCategoryId: parseInt(formData.get('productCategoryId') as string),
     price: parseFloat(formData.get('price') as string),
     unitOfMeasureId: parseInt(formData.get('unitOfMeasureId') as string),
-    typeOfProductStatus: formData.get('typeOfProductStatus') as TypeOfProductStatus,
+    typeOfProduct: formData.get('typeOfProduct') as TypeOfProductStatus,
     isReferable: formData.get('isReferable') === 'true' || undefined,
     referrablePercentage: formData.get('referrablePercentage') ? parseFloat(formData.get('referrablePercentage') as string) : undefined,
   }
@@ -69,7 +69,7 @@ export async function updateProductAction(formData: FormData, productId: number)
     productCategoryId: parseInt(formData.get('productCategoryId') as string),
     price: parseFloat(formData.get('price') as string),
     unitOfMeasureId: parseInt(formData.get('unitOfMeasureId') as string),
-    typeOfProductStatus: formData.get('typeOfProductStatus') as TypeOfProductStatus,
+    typeOfProduct: formData.get('typeOfProduct') as TypeOfProductStatus,
     isReferable: formData.get('isReferable') === 'true' || undefined,
     referrablePercentage: formData.get('referrablePercentage') ? parseFloat(formData.get('referrablePercentage') as string) : undefined,
   }

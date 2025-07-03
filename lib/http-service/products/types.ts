@@ -28,7 +28,7 @@ export interface ProductDTO {
   price: number;
   isActive: boolean;
   stockQuantity: number;
-  typeOfProduct: string; // This is the response field name for typeOfProductStatus
+  typeOfProduct: string; // This is the response field name for typeOfProduct
 }
 
 export interface PaginationParams {

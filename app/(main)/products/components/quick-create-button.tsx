@@ -10,7 +10,7 @@ import { createProductAction } from "@/actions/products";
 import { getThicknessesAction } from "@/actions/thicknesses";
 import { getColorsAction } from "@/actions/colors";
 import { getCategoriesAction } from "@/actions/categories";
-import { getMeasurementUnitsAction } from "@/actions/measurement-units"; // Added missing import
+import { getMeasurementUnitsAction } from "@/actions/measurement-units";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { 
@@ -20,6 +20,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/utils";
 
 export function QuickCreateButton() {
@@ -33,7 +34,7 @@ export function QuickCreateButton() {
   const [thicknesses, setThicknesses] = useState([]);
   const [colors, setColors] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [measurementUnits, setMeasurementUnits] = useState([]); // Added missing measurement units
+  const [measurementUnits, setMeasurementUnits] = useState([]);
 
   // Initialize form state
   const [formData, setFormData] = useState({
@@ -43,7 +44,10 @@ export function QuickCreateButton() {
     thicknessId: '',
     colorId: '',
     productCategoryId: '',
-    unitOfMeasureId: '' // Added missing field
+    unitOfMeasureId: '',
+    typeOfProduct: 'LENGTH_WIDTH',
+    isReferable: false,
+    referrablePercentage: ''
   });
 
   // Load required data when modal opens
@@ -56,13 +60,13 @@ export function QuickCreateButton() {
             getThicknessesAction(),
             getColorsAction(),
             getCategoriesAction(),
-            getMeasurementUnitsAction() // Added missing measurement units fetch
+            getMeasurementUnitsAction()
           ]);
 
           if (thicknessesRes.success) setThicknesses(thicknessesRes.data);
           if (colorsRes.success) setColors(colorsRes.data);
           if (categoriesRes.success) setCategories(categoriesRes.data);
-          if (measurementUnitsRes.success) setMeasurementUnits(measurementUnitsRes.data); // Added missing measurement units
+          if (measurementUnitsRes.success) setMeasurementUnits(measurementUnitsRes.data);
         } catch (error) {
           console.error("Error loading form data:", error);
           toast({
@@ -90,10 +94,24 @@ export function QuickCreateButton() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle checkbox changes
+  const handleCheckboxChange = (name: string, checked: boolean) => {
+    setFormData((prev) => ({ ...prev, [name]: checked }));
+  };
+
   // Format price while typing
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9.]/g, '');
     setFormData((prev) => ({ ...prev, price: value }));
+  };
+
+  // Handle referrable percentage change
+  const handleReferrablePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9.]/g, '');
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+      setFormData((prev) => ({ ...prev, referrablePercentage: value }));
+    }
   };
 
   // Handle form submission
@@ -104,13 +122,22 @@ export function QuickCreateButton() {
     try {
       // Convert form data to FormData for the action
       const submitData = new FormData();
-      submitData.append('name', formData.name);
+      
+      // Add all form fields
+      if (formData.name) submitData.append('name', formData.name);
       submitData.append('code', formData.code);
       submitData.append('price', formData.price);
       submitData.append('thicknessId', formData.thicknessId);
       submitData.append('colorId', formData.colorId);
       submitData.append('productCategoryId', formData.productCategoryId);
-      submitData.append('unitOfMeasureId', formData.unitOfMeasureId); // Added missing field
+      submitData.append('unitOfMeasureId', formData.unitOfMeasureId);
+      submitData.append('typeOfProduct', formData.typeOfProduct);
+      
+      // Add referrable settings if enabled
+      if (formData.isReferable) {
+        submitData.append('isReferable', 'true');
+        submitData.append('referrablePercentage', formData.referrablePercentage);
+      }
 
       // Submit to the server action
       const response = await createProductAction(submitData);
@@ -119,7 +146,7 @@ export function QuickCreateButton() {
         // Show success toast
         toast({
           title: "Product Created",
-          description: `Product "${formData.name}" was created successfully.`,
+          description: `Product "${formData.name || formData.code}" was created successfully.`,
           variant: "default",
         });
         
@@ -132,7 +159,10 @@ export function QuickCreateButton() {
           thicknessId: '',
           colorId: '',
           productCategoryId: '',
-          unitOfMeasureId: '' // Added missing field
+          unitOfMeasureId: '',
+          typeOfProduct: 'LENGTH_WIDTH',
+          isReferable: false,
+          referrablePercentage: ''
         });
         
         // Force a complete page refresh rather than just a router refresh
@@ -167,7 +197,7 @@ export function QuickCreateButton() {
             <Plus className="mr-2 h-4 w-4" /> New Product
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Product</DialogTitle>
         </DialogHeader>
@@ -181,17 +211,17 @@ export function QuickCreateButton() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name" className="font-medium">Product Name *</Label>
+                  <Label htmlFor="name" className="font-medium">Product Name</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    required
-                    placeholder="Enter product name"
+                    placeholder="Enter product name (optional)"
                     className="w-full"
                     disabled={isLoading}
                   />
+                  <p className="text-xs text-muted-foreground">Optional - auto-generated if empty</p>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="code" className="font-medium">Product Code *</Label>
@@ -202,7 +232,7 @@ export function QuickCreateButton() {
                     value={formData.code}
                     onChange={handleChange}
                     required
-                    placeholder="Enter product code"
+                    placeholder="Enter unique product code"
                     className="w-full"
                     disabled={isLoading}
                   />
@@ -267,7 +297,7 @@ export function QuickCreateButton() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="thicknessId" className="font-medium">Thickness *</Label>
                   <Select 
@@ -289,9 +319,8 @@ export function QuickCreateButton() {
                   </Select>
                 </div>
                 
-                {/* Added missing Unit of Measure field */}
                 <div className="grid gap-2">
-                  <Label htmlFor="unitOfMeasureId" className="font-medium">Unit of Measure *</Label>
+                  <Label htmlFor="unitOfMeasureId" className="font-medium">Unit *</Label>
                   <Select 
                     name="unitOfMeasureId"
                     value={formData.unitOfMeasureId}
@@ -310,6 +339,65 @@ export function QuickCreateButton() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="typeOfProduct" className="font-medium">Type *</Label>
+                  <Select 
+                    name="typeOfProduct"
+                    value={formData.typeOfProduct}
+                    onValueChange={(value) => handleSelectChange('typeOfProduct', value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LENGTH_WIDTH">Length & Width</SelectItem>
+                      <SelectItem value="WEIGHT">Weight</SelectItem>
+                      <SelectItem value="UNKNOWN">Unknown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Referral Settings */}
+              <div className="space-y-3 p-3 border rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isReferable" 
+                    checked={formData.isReferable}
+                    onCheckedChange={(checked) => handleCheckboxChange('isReferable', checked === true)}
+                    disabled={isLoading}
+                  />
+                  <Label htmlFor="isReferable" className="text-sm font-medium">
+                    This product is referable
+                  </Label>
+                </div>
+                
+                {formData.isReferable && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="referrablePercentage" className="font-medium">
+                      Referral Percentage *
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="referrablePercentage"
+                        name="referrablePercentage"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={formData.referrablePercentage}
+                        onChange={handleReferrablePercentageChange}
+                        placeholder="0.00"
+                        className="w-24"
+                        required={formData.isReferable}
+                        disabled={isLoading}
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>
@@ -341,4 +429,3 @@ export function QuickCreateButton() {
     </Dialog>
   );
 }
-          

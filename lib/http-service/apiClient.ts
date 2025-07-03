@@ -32,7 +32,7 @@ export class APIClient {
     console.log("**")
     console.log(`Request to: ${this.baseUrl}${url}`);
     console.log(`Status: ${response.status}`);
-    console.log("**")
+    console.log(options)
     console.log("**")
     console.log("**")
    

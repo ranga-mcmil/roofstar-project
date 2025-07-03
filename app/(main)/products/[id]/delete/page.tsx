@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { deleteProductAction, getProductAction } from "@/actions/products";
-import { GetProductResponse } from "@/lib/http-service/products/types";
+import { ProductDTO } from "@/lib/http-service/products/types";
 import { APIResponse } from "@/lib/http-service/apiClient";
 import { DeleteButton } from "../../components/delete-button";
 
@@ -18,14 +18,14 @@ export default async function DeleteProductPage({ params }: DeleteProductPagePro
   const id = parseInt(params.id, 10);
   
   // Get product details first
-  const productResponse: APIResponse<GetProductResponse> = await getProductAction(id);
+  const productResponse: APIResponse<ProductDTO> = await getProductAction(id);
   
   // If product not found, show 404
   if (!productResponse.success || !productResponse.data) {
     notFound();
   }
   
-  const product: GetProductResponse = productResponse.data;
+  const product: ProductDTO = productResponse.data;
   
   // Create a form action that uses the existing deleteProductAction
   async function handleDelete() {
@@ -44,6 +44,9 @@ export default async function DeleteProductPage({ params }: DeleteProductPagePro
     }
   }
   
+  // Get product display name
+  const productName = product.name || `Product ${product.code}`;
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md mx-auto">
@@ -51,7 +54,7 @@ export default async function DeleteProductPage({ params }: DeleteProductPagePro
           <Trash2 className="h-16 w-16 text-red-500 mb-2" />
           <CardTitle className="text-2xl">Delete Product</CardTitle>
           <CardDescription>
-            You are about to permanently delete product "{product.name}".
+            You are about to permanently delete "{productName}".
             This action cannot be undone.
           </CardDescription>
         </CardHeader>
@@ -63,16 +66,30 @@ export default async function DeleteProductPage({ params }: DeleteProductPagePro
                 <li>All product information will be permanently deleted</li>
                 <li>This product will no longer appear in reports</li>
                 <li>All inventory records for this product will be affected</li>
+                <li>Any referral settings will be lost</li>
                 <li>This operation cannot be reversed</li>
               </ul>
             </div>
             
-            {product.stockQuantity > 0 && (
+            {(product.stockQuantity || 0) > 0 && (
               <div className="p-3 bg-amber-50 text-amber-800 rounded-md mt-2">
                 <p className="font-medium">Inventory Warning</p>
                 <p className="text-sm mt-1">
-                  This product has {product.stockQuantity} units in stock. Deleting it will remove these items from your inventory.
+                  This product has {product.stockQuantity} {product.unitOfMeasure || 'units'} in stock. 
+                  Deleting it will remove these items from your inventory.
                 </p>
+              </div>
+            )}
+            
+            {product.typeOfProduct && (
+              <div className="p-3 bg-blue-50 text-blue-800 rounded-md mt-2">
+                <p className="font-medium">Product Details</p>
+                <div className="text-sm mt-1 space-y-1">
+                  <p>• Type: {product.typeOfProduct.replace('_', ' ').toLowerCase()}</p>
+                  <p>• Category: {product.productCategoryName}</p>
+                  <p>• Unit: {product.unitOfMeasure}</p>
+                  {product.branchName && <p>• Branch: {product.branchName}</p>}
+                </div>
               </div>
             )}
             

@@ -18,7 +18,7 @@ export const CreateProductSchema = z.object({
   productCategoryId: z.number().int().min(1, 'Product category ID is required'),
   price: z.number().min(0.01, 'Price must be greater than 0'),
   unitOfMeasureId: z.number().int().min(1, 'Unit of measure ID is required'),
-  typeOfProductStatus: TypeOfProductStatusEnum,
+  typeOfProduct: TypeOfProductStatusEnum,
   isReferable: z.boolean().optional(),
   referrablePercentage: z.number().min(0).max(100, 'Referrable percentage must be between 0 and 100').optional(),
 });
@@ -31,7 +31,7 @@ export const UpdateProductSchema = z.object({
   productCategoryId: z.number().int().min(1, 'Product category ID is required'),
   price: z.number().min(0.01, 'Price must be greater than 0'),
   unitOfMeasureId: z.number().int().min(1, 'Unit of measure ID is required'),
-  typeOfProductStatus: TypeOfProductStatusEnum,
+  typeOfProduct: TypeOfProductStatusEnum,
   isReferable: z.boolean().optional(),
   referrablePercentage: z.number().min(0).max(100, 'Referrable percentage must be between 0 and 100').optional(),
 });

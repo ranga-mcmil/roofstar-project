@@ -16,6 +16,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/utils";
 import { ThicknessDTO } from "@/lib/http-service/thicknesses/types";
 import { ColorDTO } from "@/lib/http-service/colors/types";
@@ -27,7 +28,7 @@ interface ProductFormProps {
   thicknesses: ThicknessDTO[];
   colors: ColorDTO[];
   categories: ProductCategoryDTO[];
-  measurementUnits: MeasurementUnitDTO[]; // Added missing measurement units
+  measurementUnits: MeasurementUnitDTO[];
   returnUrl: string;
   isEditing: boolean;
   selectedCategoryId?: number;
@@ -38,13 +39,15 @@ export function ProductFormClient({
   thicknesses, 
   colors, 
   categories,
-  measurementUnits, // Added missing measurement units
+  measurementUnits,
   returnUrl, 
   isEditing, 
   selectedCategoryId 
 }: ProductFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [price, setPrice] = useState<number>(product?.price || 0);
+  const [referrablePercentage, setReferrablePercentage] = useState<number>(0);
+  const [isReferable, setIsReferable] = useState<boolean>(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -54,6 +57,12 @@ export function ProductFormClient({
 
     try {
       const formData = new FormData(event.currentTarget);
+      
+      // Add the checkbox values manually since they might not be in FormData
+      if (isReferable) {
+        formData.set('isReferable', 'true');
+        formData.set('referrablePercentage', referrablePercentage.toString());
+      }
       
       // Submit to the server action
       const response = isEditing 
@@ -103,20 +112,31 @@ export function ProductFormClient({
     }
   };
 
+  // Handle referrable percentage change
+  const handleReferrablePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9.]/g, '');
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+      setReferrablePercentage(numValue);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">
-            Product Name <span className="text-red-500">*</span>
+            Product Name
           </Label>
           <Input
             id="name"
             name="name"
             defaultValue={product?.name || ""}
-            placeholder="Enter product name"
-            required
+            placeholder="Enter product name (optional)"
           />
+          <p className="text-xs text-muted-foreground">
+            Product name is optional. If not provided, it will be generated from other attributes.
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="code">
@@ -127,7 +147,7 @@ export function ProductFormClient({
             name="code"
             type="number"
             defaultValue={product?.code || ""}
-            placeholder="Enter product code"
+            placeholder="Enter unique product code"
             required
           />
         </div>
@@ -148,7 +168,7 @@ export function ProductFormClient({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="productCategoryId">
             Category <span className="text-red-500">*</span>
@@ -175,6 +195,7 @@ export function ProductFormClient({
             </SelectContent>
           </Select>
         </div>
+        
         <div className="space-y-2">
           <Label htmlFor="colorId">
             Color <span className="text-red-500">*</span>
@@ -199,6 +220,7 @@ export function ProductFormClient({
             </SelectContent>
           </Select>
         </div>
+        
         <div className="space-y-2">
           <Label htmlFor="thicknessId">
             Thickness <span className="text-red-500">*</span>
@@ -223,7 +245,9 @@ export function ProductFormClient({
             </SelectContent>
           </Select>
         </div>
-        {/* Added missing Unit of Measure field */}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="unitOfMeasureId">
             Unit of Measure <span className="text-red-500">*</span>
@@ -248,6 +272,66 @@ export function ProductFormClient({
             </SelectContent>
           </Select>
         </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="typeOfProduct">
+            Product Type <span className="text-red-500">*</span>
+          </Label>
+          <Select 
+            name="typeOfProduct"
+            defaultValue={product?.typeOfProduct || ""}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select product type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="LENGTH_WIDTH">Length & Width</SelectItem>
+              <SelectItem value="WEIGHT">Weight</SelectItem>
+              <SelectItem value="UNKNOWN">Unknown</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Referral Settings */}
+      <div className="space-y-4 p-4 border rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="isReferable" 
+            checked={isReferable}
+            onCheckedChange={(checked) => setIsReferable(checked === true)}
+          />
+          <Label htmlFor="isReferable" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            This product is referable
+          </Label>
+        </div>
+        
+        {isReferable && (
+          <div className="space-y-2">
+            <Label htmlFor="referrablePercentage">
+              Referral Percentage <span className="text-red-500">*</span>
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="referrablePercentage"
+                name="referrablePercentage"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={referrablePercentage}
+                onChange={handleReferrablePercentageChange}
+                placeholder="0.00"
+                className="w-32"
+                required={isReferable}
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Percentage of the product price that will be paid as referral commission.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end space-x-4">

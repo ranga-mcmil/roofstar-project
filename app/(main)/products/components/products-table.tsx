@@ -12,11 +12,11 @@ import {
   Eye, 
   Trash2, 
   Package, 
-  TrendingUp, 
   TrendingDown, 
   History, 
   AlertTriangle,
-  Plus
+  Plus,
+  Gift
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -90,6 +90,19 @@ export function ProductsTable({
     }
   };
 
+  // Get product type badge
+  const getTypeBadge = (typeOfProduct: string) => {
+    const type = typeOfProduct?.toLowerCase();
+    switch (type) {
+      case 'length_width':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">L×W</Badge>;
+      case 'weight':
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">Weight</Badge>;
+      default:
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 text-xs">Unknown</Badge>;
+    }
+  };
+
   // Generate skeleton rows for loading state
   const renderSkeletonRows = () => {
     return Array.from({ length: pagination.itemsPerPage }).map((_, index) => (
@@ -105,6 +118,7 @@ export function ProductsTable({
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell className="text-right">
           <Skeleton className="h-8 w-8 rounded-full ml-auto" />
         </TableCell>
@@ -121,14 +135,15 @@ export function ProductsTable({
               <TableHead className="w-[40px]">
                 <span className="sr-only">Select</span>
               </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Code</TableHead>
+              <TableHead>Name/Code</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Color</TableHead>
               <TableHead>Thickness</TableHead>
               <TableHead>Unit</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Price</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -138,7 +153,7 @@ export function ProductsTable({
               renderSkeletonRows()
             ) : products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   No products found. Try adjusting your filters.
                 </TableCell>
               </TableRow>
@@ -152,13 +167,19 @@ export function ProductsTable({
                       disabled
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.code}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{product.name || `Product ${product.code}`}</span>
+                      <span className="text-sm text-muted-foreground">Code: {product.code}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>{product.productCategoryName}</TableCell>
                   <TableCell>{product.colorName}</TableCell>
                   <TableCell>{product.thickness} mm</TableCell>
-                  {/* Added Unit of Measure column */}
                   <TableCell>{product.unitOfMeasure || 'N/A'}</TableCell>
+                  <TableCell>
+                    {getTypeBadge(product.typeOfProduct || 'unknown')}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 items-start">
                       <span className="font-medium">{product.stockQuantity || 0} {product.unitOfMeasure || 'units'}</span>
@@ -168,6 +189,7 @@ export function ProductsTable({
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{formatCurrency(product.price)}</TableCell>
+                  <TableCell>{getStatusBadge(product.isActive)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -268,3 +290,4 @@ export function ProductsTable({
     </>
   )
 }
+                
