@@ -1,7 +1,7 @@
 // app/(main)/referrals/components/referrals-client-content.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, UserCheck, Search, Phone } from "lucide-react";
 import { ReferralsTable } from "./referrals-table";
@@ -18,7 +18,7 @@ interface ReferralsClientContentProps {
   searchParams: Record<string, string | string[]>;
 }
 
-export default function ReferralsClientContent({
+function ReferralsContent({
   searchParams: initialSearchParams = {}
 }: ReferralsClientContentProps) {
   // Get URL parameters
@@ -265,4 +265,28 @@ export default function ReferralsClientContent({
       </div>
     </>
   )
+}
+
+// Main export with Suspense boundary
+export default function ReferralsClientContent(props: ReferralsClientContentProps) {
+  return (
+    <Suspense fallback={
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16 rounded mb-1" />
+              <Skeleton className="h-3 w-32" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    }>
+      <ReferralsContent {...props} />
+    </Suspense>
+  );
 }

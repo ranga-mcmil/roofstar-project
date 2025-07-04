@@ -3,18 +3,23 @@ import { Card } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { ProductionFormClient } from "../components/production-form-client"
+import { Suspense } from "react"
 
 interface NewProductionPageProps {
-  searchParams: {
+  searchParams: Promise<{
     orderId?: string
     inventoryId?: string
-  }
+    batchId?: string
+  }>
 }
 
 export default async function NewProductionPage({ searchParams }: NewProductionPageProps) {
+  // Await searchParams before accessing its properties
+  const params = await searchParams;
+  
   // Pre-selected order and inventory if provided in search params
-  const selectedOrderId = searchParams.orderId ? parseInt(searchParams.orderId, 10) : undefined;
-  const selectedInventoryId = searchParams.inventoryId ? parseInt(searchParams.inventoryId, 10) : undefined;
+  const selectedOrderId = params.orderId ? parseInt(params.orderId, 10) : undefined;
+  const selectedInventoryId = params.inventoryId ? parseInt(params.inventoryId, 10) : undefined;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -33,12 +38,14 @@ export default async function NewProductionPage({ searchParams }: NewProductionP
         </div>
 
         <Card className="p-6">
-          <ProductionFormClient 
-            returnUrl="/productions"
-            isEditing={false}
-            selectedOrderId={selectedOrderId}
-            selectedInventoryId={selectedInventoryId}
-          />
+          <Suspense fallback={<div>Loading production form...</div>}>
+            <ProductionFormClient 
+              returnUrl="/productions"
+              isEditing={false}
+              selectedOrderId={selectedOrderId}
+              selectedInventoryId={selectedInventoryId}
+            />
+          </Suspense>
         </Card>
       </main>
     </div>

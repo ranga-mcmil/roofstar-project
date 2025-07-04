@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
-export function ProductionsToastHandler() {
+function ToastHandlerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -52,4 +52,12 @@ export function ProductionsToastHandler() {
   
   // This component doesn't render anything
   return null;
+}
+
+export function ProductionsToastHandler() {
+  return (
+    <Suspense fallback={null}>
+      <ToastHandlerContent />
+    </Suspense>
+  );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Package, Calendar, TrendingUp } from "lucide-react";
 import { ProductionsTable } from "./productions-table";
@@ -14,11 +14,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ProductionsToastHandler } from './productions-toast-handler';
 
-export default function ProductionsClientContent({
-  searchParams: initialSearchParams = {}
-}: {
+interface ProductionsClientContentProps {
   searchParams: Record<string, string | string[]>;
-}) {
+}
+
+function ProductionsContent({
+  searchParams: initialSearchParams = {}
+}: ProductionsClientContentProps) {
   // Get URL parameters
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -228,4 +230,46 @@ export default function ProductionsClientContent({
       </div>
     </>
   )
+}
+
+// Main export with Suspense boundary
+export default function ProductionsClientContent(props: ProductionsClientContentProps) {
+  return (
+    <Suspense fallback={
+      <div className="space-y-4">
+        {/* Stats cards loading */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 rounded mb-1" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {/* Filters and table loading */}
+        <div className="border rounded-lg p-2">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center mb-4">
+            <Skeleton className="h-10 w-full sm:w-[300px]" />
+            <Skeleton className="h-10 w-[160px]" />
+          </div>
+          
+          <div className="rounded-md border overflow-hidden">
+            <div className="p-8 text-center">
+              <Skeleton className="h-6 w-48 mx-auto mb-2" />
+              <Skeleton className="h-4 w-32 mx-auto" />
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <ProductionsContent {...props} />
+    </Suspense>
+  );
 }

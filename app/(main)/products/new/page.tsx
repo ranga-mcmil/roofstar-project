@@ -5,37 +5,41 @@ import Link from "next/link"
 import { getThicknessesAction } from "@/actions/thicknesses"
 import { getColorsAction } from "@/actions/colors"
 import { getCategoriesAction } from "@/actions/categories"
-import { getMeasurementUnitsAction } from "@/actions/measurement-units" // Added missing import
+import { getMeasurementUnitsAction } from "@/actions/measurement-units"
 import { ProductFormClient } from "../components/product-form-client"
+import { Suspense } from "react"
 
 interface NewProductPageProps {
-  searchParams: {
+  searchParams: Promise<{
     categoryId?: string
-  }
+  }>
 }
 
 export default async function NewProductPage({ searchParams }: NewProductPageProps) {
+  // Await searchParams before accessing its properties
+  const params = await searchParams;
+  
   // Fetch related data in parallel
   const [
     thicknessesResponse, 
     colorsResponse, 
     categoriesResponse,
-    measurementUnitsResponse // Added missing measurement units fetch
+    measurementUnitsResponse
   ] = await Promise.all([
     getThicknessesAction(),
     getColorsAction(),
     getCategoriesAction(),
-    getMeasurementUnitsAction() // Added missing measurement units fetch
+    getMeasurementUnitsAction()
   ]);
   
   // Get related data for the form
   const thicknesses = thicknessesResponse.success ? thicknessesResponse.data : [];
   const colors = colorsResponse.success ? colorsResponse.data : [];
   const categories = categoriesResponse.success ? categoriesResponse.data : [];
-  const measurementUnits = measurementUnitsResponse.success ? measurementUnitsResponse.data : []; // Added missing measurement units
+  const measurementUnits = measurementUnitsResponse.success ? measurementUnitsResponse.data : [];
 
   // Pre-selected category if provided in search params
-  const selectedCategoryId = searchParams.categoryId ? parseInt(searchParams.categoryId, 10) : undefined;
+  const selectedCategoryId = params.categoryId ? parseInt(params.categoryId, 10) : undefined;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -54,15 +58,17 @@ export default async function NewProductPage({ searchParams }: NewProductPagePro
         </div>
 
         <Card className="p-6">
-          <ProductFormClient 
-            thicknesses={thicknesses}
-            colors={colors}
-            categories={categories}
-            measurementUnits={measurementUnits} // Added missing measurement units
-            returnUrl="/products"
-            isEditing={false}
-            selectedCategoryId={selectedCategoryId}
-          />
+          <Suspense fallback={<div>Loading production form...</div>}>
+            <ProductFormClient 
+              thicknesses={thicknesses}
+              colors={colors}
+              categories={categories}
+              measurementUnits={measurementUnits}
+              returnUrl="/products"
+              isEditing={false}
+              selectedCategoryId={selectedCategoryId}
+            />
+          </Suspense>
         </Card>
       </main>
     </div>

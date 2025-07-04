@@ -6,6 +6,7 @@ import BatchesClientContent from "./components/batches-client-content"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/next-auth-options"
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
 
 interface BatchesPageProps {
   search?: string
@@ -61,7 +62,9 @@ export default async function BatchesPage(props: {
         </div>
 
         {/* Client component for dynamic content with loading states */}
-        <BatchesClientContent searchParams={searchParams as Record<string, string>} />
+        <Suspense fallback={<div>Loading production form...</div>}>
+          <BatchesClientContent searchParams={searchParams as Record<string, string>} />
+        </Suspense>
       </main>
     </div>
   )

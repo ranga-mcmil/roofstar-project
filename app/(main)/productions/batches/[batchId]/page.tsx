@@ -15,17 +15,20 @@ interface ProductionsByBatchPageProps {
   params: {
     batchId: string
   }
-  searchParams: {
+  searchParams: Promise<{
     page?: string
     pageSize?: string
     error?: string
-  }
+  }>
 }
 
 export default async function ProductionsByBatchPage({ params, searchParams }: ProductionsByBatchPageProps) {
   const batchId = parseInt(params.batchId, 10);
-  const page = parseInt(searchParams.page || "1", 10);
-  const pageSize = parseInt(searchParams.pageSize || "10", 10);
+  
+  // Await searchParams
+  const searchParamsData = await searchParams;
+  const page = parseInt(searchParamsData.page || "1", 10);
+  const pageSize = parseInt(searchParamsData.pageSize || "10", 10);
 
   const session = await getServerSession(authOptions)
   console.log("*****")
@@ -100,9 +103,9 @@ export default async function ProductionsByBatchPage({ params, searchParams }: P
     <div className="flex min-h-screen w-full flex-col">
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         {/* Error message if present */}
-        {searchParams.error && (
+        {searchParamsData.error && (
           <div className="p-3 bg-red-50 text-red-800 rounded-md">
-            {decodeURIComponent(searchParams.error)}
+            {decodeURIComponent(searchParamsData.error)}
           </div>
         )}
         
@@ -228,7 +231,7 @@ export default async function ProductionsByBatchPage({ params, searchParams }: P
                 startIndex,
                 endIndex,
               }}
-              searchParams={searchParams}
+              searchParams={searchParamsData}
               isLoading={false}
               showBatchColumn={false} // Don't show batch column since we're filtering by batch
             />
